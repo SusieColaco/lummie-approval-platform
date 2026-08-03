@@ -1,0 +1,18 @@
+.client-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--lummie-cream);
+}
+
+.client-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2xl);
+}
+
+@media (max-width: 768px) {
+  .client-main {
+    padding: var(--space-lg);
+  }
+}
