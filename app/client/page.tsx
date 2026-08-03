@@ -1,31 +1,30 @@
+'use client'
+
+import { useState } from 'react'
 import styles from './client.module.css'
 
 export default function ClientDashboard() {
   const clientName = 'Cliente Teste'
   const projectName = 'Vídeo Institucional'
-  const scripts = [
-    {
-      id: 1,
-      title: 'Introdução',
-      description: 'Apresentação inicial da marca',
-      status: 'Aguardando aprovação',
-      lastUpdate: '2026-08-02',
-    },
-    {
-      id: 2,
-      title: 'Proposta de Valor',
-      description: 'Explicação sobre diferenciais',
-      status: 'Aprovado',
-      lastUpdate: '2026-08-01',
-    },
-    {
-      id: 3,
-      title: 'Encerramento',
-      description: 'Call to action e fechamento',
-      status: 'Pendente de edição',
-      lastUpdate: '2026-07-31',
-    },
+
+  const allScripts = [
+    { id: 1, title: 'Introdução', description: 'Apresentação inicial', status: 'Aguardando aprovação', month: '2026-09' },
+    { id: 2, title: 'Proposta de Valor', description: 'Diferenciais', status: 'Aprovado', month: '2026-09' },
+    { id: 3, title: 'Encerramento', description: 'Call to action', status: 'Pendente de edição', month: '2026-09' },
+    { id: 4, title: 'Depoimento', description: 'Cliente falando', status: 'Gravados', month: '2026-08' },
+    { id: 5, title: 'Produto', description: 'Showcase', status: 'Aprovado', month: '2026-08' },
   ]
+
+  const monthsWithScripts = [...new Set(allScripts.map(s => s.month))].sort().reverse()
+  const [selectedMonth, setSelectedMonth] = useState(monthsWithScripts[0])
+
+  const monthsScripts = allScripts.filter(s => s.month === selectedMonth)
+  const statuses = ['Aguardando aprovação', 'Aprovado', 'Gravados', 'Pendente de edição']
+
+  const formatMonth = (m: string) => {
+    const [year, month] = m.split('-')
+    return new Date(m + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  }
 
   return (
     <div className={styles.container}>
@@ -41,31 +40,37 @@ export default function ClientDashboard() {
           <h2>Seus Roteiros</h2>
         </div>
 
-        <div className={styles.scriptsGrid}>
-          {scripts.map((script) => (
-            <div key={script.id} className={styles.scriptCard}>
-              <div className={styles.scriptHeader}>
-                <h3>{script.title}</h3>
-                <span className={`${styles.scriptStatus} ${styles[script.status.replace(/ /g, '-').toLowerCase()]}`}>
-                  {script.status}
-                </span>
-              </div>
-              <p className={styles.scriptDescription}>{script.description}</p>
-              <div className={styles.scriptFooter}>
-                <small>Atualizado em {new Date(script.lastUpdate).toLocaleDateString('pt-BR')}</small>
-                <button className={styles.viewBtn}>Visualizar</button>
+        <div className={styles.monthSelector}>
+          <label htmlFor="month-select">Selecione o mês</label>
+          <select
+            id="month-select"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className={styles.monthSelect}
+          >
+            {monthsWithScripts.map(m => (
+              <option key={m} value={m}>{formatMonth(m)}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.kanban}>
+          {statuses.map(status => (
+            <div key={status} className={styles.kanbanColumn}>
+              <h3 className={styles.columnTitle}>{status}</h3>
+              <div className={styles.columnContent}>
+                {monthsScripts
+                  .filter(s => s.status === status)
+                  .map(script => (
+                    <div key={script.id} className={`${styles.scriptCard} ${styles[status.replace(/ /g, '-').toLowerCase()]}`}>
+                      <p className={styles.scriptTitle}>{script.title}</p>
+                      <p className={styles.scriptDesc}>{script.description}</p>
+                    </div>
+                  ))}
               </div>
             </div>
           ))}
         </div>
-      </div>
-
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.label}>02</span>
-          <h2>Documentos do Projeto</h2>
-        </div>
-        <p className={styles.placeholder}>Seus documentos aparecerão aqui em breve.</p>
       </div>
     </div>
   )

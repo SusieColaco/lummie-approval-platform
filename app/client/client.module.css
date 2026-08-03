@@ -171,6 +171,140 @@
   text-align: center;
 }
 
+.monthSelector {
+  margin-bottom: var(--space-xl);
+}
+
+.monthSelector label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--lummie-ash);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-sm);
+}
+
+.monthSelect {
+  width: 100%;
+  max-width: 300px;
+  padding: var(--space-md);
+  border: 1px solid var(--lummie-line);
+  border-radius: var(--radius-md);
+  background: white;
+  font-family: var(--font-primary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.monthSelect:hover {
+  border-color: var(--lummie-graphite);
+}
+
+.monthSelect:focus {
+  outline: none;
+  border-color: var(--lummie-black);
+  box-shadow: var(--shadow-md);
+}
+
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-lg);
+  margin-top: var(--space-xl);
+}
+
+.kanbanColumn {
+  background: white;
+  border: 1px solid var(--lummie-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.columnTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--lummie-ash);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 var(--space-lg) 0;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--lummie-line);
+}
+
+.columnContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  overflow-y: auto;
+}
+
+.scriptCard {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--lummie-line);
+  cursor: default;
+  transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scriptCard:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.scriptCard.aguardando-aprovação {
+  background: #fff3cd;
+  border-color: #ffeaa7;
+}
+
+.scriptCard.aprovado {
+  background: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.scriptCard.gravados {
+  background: #d1ecf1;
+  border-color: #bee5eb;
+}
+
+.scriptCard.pendente-de-edição {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.scriptTitle {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--lummie-black);
+  margin: 0 0 0.25rem 0;
+}
+
+.scriptDesc {
+  font-size: 0.85rem;
+  color: var(--lummie-graphite);
+  margin: 0;
+}
+
+@media (max-width: 1200px) {
+  .kanban {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kanban {
+    grid-template-columns: 1fr;
+  }
+
+  .monthSelect {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .welcome h1 {
     font-size: 2rem;
