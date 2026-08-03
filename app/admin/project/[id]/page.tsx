@@ -75,6 +75,17 @@ export default function ProjectDetail({ params }: { params: { id: string } }) {
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <span className={styles.label}>02</span>
+            <h2>Arquivos</h2>
+            <Link href={`/admin/project/${project.id}/files`} className={styles.addBtn}>
+              📄 Gerenciar
+            </Link>
+          </div>
+          <p className={styles.fileHint}>Brand Book, Raio-X e Briefing</p>
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.label}>03</span>
             <h2>Roteiros</h2>
             <Link href={`/admin/project/${project.id}/script/new`} className={styles.addBtn}>
               + Adicionar

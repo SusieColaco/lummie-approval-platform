@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import styles from './client.module.css'
 
@@ -37,6 +38,17 @@ export default function ClientDashboard() {
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.label}>01</span>
+          <h2>Documentação</h2>
+        </div>
+        <p className={styles.docHint}>Acesse Brand Book, Raio-X e Briefing do projeto</p>
+        <Link href="/client/project/1" className={styles.docLink}>
+          📄 Ver Arquivos →
+        </Link>
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <span className={styles.label}>02</span>
           <h2>Seus Roteiros</h2>
         </div>
 
@@ -62,10 +74,15 @@ export default function ClientDashboard() {
                 {monthsScripts
                   .filter(s => s.status === status)
                   .map(script => (
-                    <div key={script.id} className={`${styles.scriptCard} ${styles[status.replace(/ /g, '-').toLowerCase()]}`}>
+                    <Link
+                      key={script.id}
+                      href={`/client/project/1/script/${script.id}`}
+                      className={`${styles.scriptCard} ${styles[status.replace(/ /g, '-').toLowerCase()]}`}
+                    >
                       <p className={styles.scriptTitle}>{script.title}</p>
                       <p className={styles.scriptDesc}>{script.description}</p>
-                    </div>
+                      <p className={styles.scriptAction}>Comentar →</p>
+                    </Link>
                   ))}
               </div>
             </div>

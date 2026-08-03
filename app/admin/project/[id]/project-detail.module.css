@@ -249,6 +249,12 @@
   color: var(--lummie-black);
 }
 
+.fileHint {
+  color: var(--lummie-graphite);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
 @media (max-width: 768px) {
   .header {
     flex-direction: column;

@@ -1,0 +1,108 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-3xl);
+}
+
+.back {
+  display: inline-block;
+  color: var(--lummie-black);
+  text-decoration: none;
+  margin-bottom: var(--space-2xl);
+  transition: color 0.2s;
+}
+
+.back:hover {
+  color: var(--lummie-gold);
+}
+
+.header {
+  margin-bottom: var(--space-3xl);
+}
+
+.header h1 {
+  margin-bottom: var(--space-sm);
+}
+
+.subtitle {
+  color: var(--lummie-graphite);
+  font-size: 0.95rem;
+}
+
+.form {
+  background: white;
+  padding: var(--space-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.formGroup {
+  margin-bottom: var(--space-2xl);
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-weight: 500;
+  color: var(--lummie-black);
+}
+
+.formGroup input,
+.formGroup textarea {
+  width: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--lummie-line);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-family: var(--font-primary);
+  transition: border-color 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: var(--lummie-gold);
+  box-shadow: 0 0 0 3px rgba(182, 151, 99, 0.1);
+}
+
+.formActions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-2xl);
+  border-top: 1px solid var(--lummie-line);
+}
+
+.submitBtn {
+  padding: var(--space-md) var(--space-xl);
+  background: var(--lummie-black);
+  color: var(--lummie-cream);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.submitBtn:hover {
+  background: var(--lummie-graphite);
+}
+
+.cancelBtn {
+  padding: var(--space-md) var(--space-xl);
+  background: transparent;
+  color: var(--lummie-graphite);
+  border: 1px solid var(--lummie-line);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.cancelBtn:hover {
+  border-color: var(--lummie-graphite);
+  color: var(--lummie-black);
+}

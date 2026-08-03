@@ -1,0 +1,209 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-3xl);
+}
+
+.back {
+  display: inline-block;
+  color: var(--lummie-black);
+  text-decoration: none;
+  margin-bottom: var(--space-2xl);
+  transition: color 0.2s;
+  font-size: 0.95rem;
+}
+
+.back:hover {
+  color: var(--lummie-gold);
+}
+
+.scriptHeader {
+  margin-bottom: var(--space-3xl);
+}
+
+.scriptHeader h1 {
+  margin-bottom: var(--space-sm);
+}
+
+.subtitle {
+  color: var(--lummie-graphite);
+  font-size: 0.95rem;
+}
+
+.scriptContent {
+  margin-bottom: var(--space-3xl);
+}
+
+.contentBox {
+  background: white;
+  padding: var(--space-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--lummie-gold);
+}
+
+.contentBox h3 {
+  margin-bottom: var(--space-lg);
+  font-size: 1.25rem;
+}
+
+.contentBox p {
+  color: var(--lummie-graphite);
+  line-height: 1.8;
+}
+
+.feedbackForm {
+  background: white;
+  padding: var(--space-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.feedbackForm h2 {
+  margin-bottom: var(--space-2xl);
+  font-size: 1.75rem;
+}
+
+.formGroup {
+  margin-bottom: var(--space-2xl);
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-weight: 500;
+  color: var(--lummie-black);
+  font-size: 0.95rem;
+}
+
+.statusSelect {
+  width: 100%;
+  padding: var(--space-md);
+  border: 2px solid var(--lummie-line);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-family: var(--font-primary);
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.statusSelect:focus {
+  outline: none;
+  border-color: var(--lummie-gold);
+  box-shadow: 0 0 0 3px rgba(182, 151, 99, 0.1);
+}
+
+.notesArea {
+  width: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--lummie-line);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-family: var(--font-primary);
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.notesArea:focus {
+  outline: none;
+  border-color: var(--lummie-gold);
+  box-shadow: 0 0 0 3px rgba(182, 151, 99, 0.1);
+}
+
+.audioInput {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 2px dashed var(--lummie-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: rgba(182, 151, 99, 0.02);
+}
+
+.audioInput:hover {
+  border-color: var(--lummie-gold);
+  background: rgba(182, 151, 99, 0.05);
+}
+
+.audioFile {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.audioLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  color: var(--lummie-graphite);
+  font-size: 0.95rem;
+  pointer-events: none;
+  width: 100%;
+}
+
+.audioPreview {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background: rgba(182, 151, 99, 0.05);
+  border-radius: var(--radius-md);
+}
+
+.audioPreview audio {
+  width: 100%;
+  height: 40px;
+}
+
+.formActions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-2xl);
+  border-top: 1px solid var(--lummie-line);
+}
+
+.submitBtn {
+  padding: var(--space-md) var(--space-xl);
+  background: var(--lummie-black);
+  color: var(--lummie-cream);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 1rem;
+  flex: 1;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--lummie-graphite);
+}
+
+.submitBtn:disabled {
+  background: var(--lummie-ash);
+  cursor: default;
+}
+
+.cancelBtn {
+  padding: var(--space-md) var(--space-xl);
+  background: transparent;
+  color: var(--lummie-graphite);
+  border: 1px solid var(--lummie-line);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  font-size: 1rem;
+}
+
+.cancelBtn:hover {
+  border-color: var(--lummie-graphite);
+  color: var(--lummie-black);
+}
