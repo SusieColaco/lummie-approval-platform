@@ -11,7 +11,7 @@
 
   /* Typography */
   --font-primary: 'Neue Montreal Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-accent: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-accent: 'Instrument Serif', -apple-system, BlinkMacSystemFont, 'Segoe UI', serif;
 
   /* Spacing */
   --space-xs: 0.25rem;
