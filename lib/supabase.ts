@@ -82,3 +82,24 @@ export async function getProjectFiles(projectId: number) {
   if (error) throw error
   return data
 }
+
+// Salvar feedback de cliente
+export async function saveFeedback(
+  scriptId: number,
+  projectId: number,
+  approvalStatus: 'aprovado' | 'reprovado' | 'alteracao',
+  notes: string
+) {
+  const { data, error } = await supabase
+    .from('feedback')
+    .insert({
+      script_id: scriptId,
+      project_id: projectId,
+      approval_status: approvalStatus,
+      notes: notes,
+    })
+    .select()
+
+  if (error) throw error
+  return data
+}

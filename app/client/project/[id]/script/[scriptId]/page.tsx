@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { saveFeedback } from '@/lib/supabase'
 import styles from './client-script.module.css'
 
 export default function ClientViewScript({
@@ -54,10 +55,27 @@ export default function ClientViewScript({
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Client feedback:', formData)
     setIsSubmitted(true)
+
+    try {
+      const statusMap: Record<string, 'aprovado' | 'reprovado' | 'alteracao'> = {
+        'aprovado': 'aprovado',
+        'reprovado': 'reprovado',
+        'alteracao': 'alteracao',
+      }
+
+      await saveFeedback(
+        parseInt(params.scriptId),
+        parseInt(params.id),
+        statusMap[formData.status] || 'alteracao',
+        formData.notes
+      )
+    } catch (error) {
+      console.error('Erro ao salvar feedback:', error)
+    }
+
     setTimeout(() => {
       window.location.href = `/client/project/${params.id}`
     }, 1500)
