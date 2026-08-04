@@ -23,7 +23,6 @@ export default function ClientDashboard() {
   const statuses = ['Aguardando aprovação', 'Aprovado', 'Gravados', 'Pendente de edição']
 
   const formatMonth = (m: string) => {
-    const [year, month] = m.split('-')
     return new Date(m + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
   }
 
