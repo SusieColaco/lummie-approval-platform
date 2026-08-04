@@ -1,7 +1,11 @@
 import Link from 'next/link'
 import styles from './AdminNav.module.css'
 
-export default function AdminNav() {
+interface AdminNavProps {
+  onLogout?: () => void
+}
+
+export default function AdminNav({ onLogout }: AdminNavProps) {
   return (
     <nav className={styles.nav}>
       <Link href="/admin" className={styles.logo}>
@@ -26,6 +30,11 @@ export default function AdminNav() {
 
       <div className={styles.footer}>
         <p>v0.1.0</p>
+        {onLogout && (
+          <button onClick={onLogout} className={styles.logoutBtn}>
+            Sair
+          </button>
+        )}
       </div>
     </nav>
   )
