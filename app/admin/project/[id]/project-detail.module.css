@@ -54,6 +54,29 @@
   letter-spacing: 0.5px;
 }
 
+.editBtn,
+.shareBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: var(--lummie-cream);
+  border: 1px solid var(--lummie-line);
+  border-radius: var(--radius-md);
+  font-size: 1.1rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.editBtn:hover,
+.shareBtn:hover {
+  background: var(--lummie-gold);
+  border-color: var(--lummie-gold);
+}
+
 .grid {
   display: flex;
   flex-direction: column;

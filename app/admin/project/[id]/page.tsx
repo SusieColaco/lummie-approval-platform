@@ -43,6 +43,12 @@ export default function ProjectDetail({ params }: { params: { id: string } }) {
         </div>
         <div className={styles.headerActions}>
           <span className={styles.status}>{project.status}</span>
+          <Link href={`/admin/project/${project.id}/edit`} className={styles.editBtn} title="Editar projeto">
+            ✏️
+          </Link>
+          <Link href={`/admin/project/${project.id}/share`} className={styles.shareBtn} title="Compartilhar com cliente">
+            📤
+          </Link>
         </div>
       </div>
 
