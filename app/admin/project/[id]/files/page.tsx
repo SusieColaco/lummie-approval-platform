@@ -43,7 +43,7 @@ export default function AdminFilesPage({ params }: { params: { id: string } }) {
   }
 
   async function handleUpload(
-    e: React.DragEvent<HTMLDivElement> | React.ChangeEvent<HTMLInputElement>,
+    e: React.DragEvent<HTMLLabelElement> | React.ChangeEvent<HTMLInputElement>,
     fileType: FileType
   ) {
     e.preventDefault()
