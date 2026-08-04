@@ -17,7 +17,7 @@ const FILE_LABELS: Record<string, string> = {
   briefing: 'Briefing',
 }
 
-export default function ClientProjectPage({ params }: { params: { id: string } }) {
+export default function ClientProjectPage() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
 
   // Mock de arquivos (depois virá do Supabase)
