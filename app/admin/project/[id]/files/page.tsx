@@ -39,8 +39,6 @@ export default function AdminFilesPage({ params }: { params: { id: string } }) {
     } catch (err) {
       console.error('Erro ao carregar arquivos:', err)
       setError('Erro ao carregar arquivos')
-    } finally {
-      setLoading(false)
     }
   }
 
