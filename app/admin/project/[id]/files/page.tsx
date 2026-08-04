@@ -26,7 +26,6 @@ export default function AdminFilesPage({ params }: { params: { id: string } }) {
   const projectId = parseInt(params.id)
   const [files, setFiles] = useState<ProjectFile[]>([])
   const [uploading, setUploading] = useState<FileType | null>(null)
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>('')
 
   useEffect(() => {
