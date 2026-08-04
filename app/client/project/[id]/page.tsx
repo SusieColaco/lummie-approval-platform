@@ -18,7 +18,6 @@ const FILE_LABELS: Record<string, string> = {
 }
 
 export default function ClientProjectPage({ params }: { params: { id: string } }) {
-  const projectId = parseInt(params.id)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
 
   // Mock de arquivos (depois virá do Supabase)
