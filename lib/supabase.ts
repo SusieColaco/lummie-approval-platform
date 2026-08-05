@@ -83,7 +83,7 @@ export async function getProjectFiles(projectId: number) {
   return data
 }
 
-// Salvar feedback de cliente
+// Salvar feedback de cliente (novo fluxo, baseado em client_id/token)
 export async function saveFeedback(
   scriptId: number,
   clientId: number,
@@ -95,6 +95,27 @@ export async function saveFeedback(
     .insert({
       script_id: scriptId,
       client_id: clientId,
+      approval_status: approvalStatus,
+      notes: notes,
+    })
+    .select()
+
+  if (error) throw error
+  return data
+}
+
+// Salvar feedback de cliente (fluxo antigo, baseado em project_id)
+export async function saveFeedbackForProject(
+  scriptId: number,
+  projectId: number,
+  approvalStatus: 'aprovado' | 'reprovado' | 'alteracao',
+  notes: string
+) {
+  const { data, error } = await supabase
+    .from('feedback')
+    .insert({
+      script_id: scriptId,
+      project_id: projectId,
       approval_status: approvalStatus,
       notes: notes,
     })

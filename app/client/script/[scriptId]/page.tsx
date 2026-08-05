@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { saveFeedback } from '@/lib/supabase'
 import styles from './client-script.module.css'
+
+export const dynamic = 'force-dynamic'
 
 interface Script {
   id: number
@@ -21,6 +23,18 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 export default function ClientViewScript({
+  params
+}: {
+  params: { scriptId: string }
+}) {
+  return (
+    <Suspense fallback={<div className={styles.container}><p>Carregando...</p></div>}>
+      <ClientViewScriptContent params={params} />
+    </Suspense>
+  )
+}
+
+function ClientViewScriptContent({
   params
 }: {
   params: { scriptId: string }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { saveFeedback } from '@/lib/supabase'
+import { saveFeedbackForProject } from '@/lib/supabase'
 import styles from './client-script.module.css'
 
 interface Script {
@@ -41,8 +41,16 @@ export default function ClientViewScript({
   const [formData, setFormData] = useState({
     notes: '',
     audioFile: null as File | null,
-    status: script.status === 'Aprovado' ? 'aprovado' : script.status === 'Pendente de edição' ? 'alteracao' : 'padrao',
+    status: 'padrao',
   })
+
+  useEffect(() => {
+    if (!script) return
+    setFormData(prev => ({
+      ...prev,
+      status: script.status === 'Aprovado' ? 'aprovado' : script.status === 'Pendente de edição' ? 'alteracao' : 'padrao',
+    }))
+  }, [script])
 
   const [audioPreview, setAudioPreview] = useState<string>('')
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -74,7 +82,7 @@ export default function ClientViewScript({
         'alteracao': 'alteracao',
       }
 
-      await saveFeedback(
+      await saveFeedbackForProject(
         parseInt(params.scriptId),
         parseInt(params.id),
         statusMap[formData.status] || 'alteracao',

@@ -2,8 +2,10 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import styles from './client.module.css'
+
+export const dynamic = 'force-dynamic'
 
 interface Client {
   id: number
@@ -19,6 +21,14 @@ interface Script {
 }
 
 export default function ClientDashboard() {
+  return (
+    <Suspense fallback={<div className={styles.container}><p>Carregando...</p></div>}>
+      <ClientDashboardContent />
+    </Suspense>
+  )
+}
+
+function ClientDashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
