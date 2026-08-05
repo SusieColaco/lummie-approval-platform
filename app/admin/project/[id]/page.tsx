@@ -1,34 +1,59 @@
+'use client'
+
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import styles from './project-detail.module.css'
 
+interface Project {
+  id: number
+  name: string
+  client_name: string
+  client_email: string
+  status: string
+}
+
+interface Script {
+  id: number
+  title: string
+  status: string
+  content: string
+}
+
 export default function ProjectDetail({ params }: { params: { id: string } }) {
-  const project = {
-    id: params.id,
-    name: 'Cliente Teste LUMMIE',
-    client: 'Cliente Teste',
-    email: 'cliente@teste.com',
-    status: 'Em andamento',
-    scripts: [
-      {
-        id: 1,
-        title: 'Introdução',
-        status: 'Aguardando aprovação',
-        content: 'Aqui entra o texto do roteiro...',
-      },
-      {
-        id: 2,
-        title: 'Proposta de Valor',
-        status: 'Aprovado',
-        content: 'Aqui entra o texto do roteiro...',
-      },
-      {
-        id: 3,
-        title: 'Encerramento',
-        status: 'Pendente de edição',
-        content: 'Aqui entra o texto do roteiro...',
-      },
-    ],
-  }
+  const [project, setProject] = useState<Project | null>(null)
+  const [scripts, setScripts] = useState<Script[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [projectRes, scriptsRes] = await Promise.all([
+          fetch(`/api/projects/${params.id}`),
+          fetch(`/api/projects/${params.id}/scripts`),
+        ])
+
+        if (!projectRes.ok || !scriptsRes.ok) {
+          throw new Error('Erro ao carregar dados')
+        }
+
+        const projectData = await projectRes.json()
+        const scriptsData = await scriptsRes.json()
+
+        setProject(projectData)
+        setScripts(scriptsData || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [params.id])
+
+  if (loading) return <div className={styles.container}><p>Carregando...</p></div>
+  if (!project) return <div className={styles.container}><p>Projeto não encontrado</p></div>
 
   const clientLink = `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/client?token=${project.id}`
 
@@ -36,10 +61,12 @@ export default function ProjectDetail({ params }: { params: { id: string } }) {
     <div className={styles.container}>
       <Link href="/admin" className={styles.back}>← Voltar</Link>
 
+      {error && <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#fee', color: '#c33', borderRadius: '4px' }}>{error}</div>}
+
       <div className={styles.header}>
         <div>
           <h1>{project.name}</h1>
-          <p className={styles.subtitle}>Cliente: <strong>{project.client}</strong></p>
+          <p className={styles.subtitle}>Cliente: <strong>{project.client_name}</strong></p>
         </div>
         <div className={styles.headerActions}>
           <span className={styles.status}>{project.status}</span>
@@ -62,11 +89,11 @@ export default function ProjectDetail({ params }: { params: { id: string } }) {
           <div className={styles.infoBox}>
             <div className={styles.infoItem}>
               <label>Cliente</label>
-              <p>{project.client}</p>
+              <p>{project.client_name}</p>
             </div>
             <div className={styles.infoItem}>
               <label>Email</label>
-              <p>{project.email}</p>
+              <p>{project.client_email}</p>
             </div>
             <div className={styles.infoItem}>
               <label>Link de Acesso</label>
@@ -99,22 +126,26 @@ export default function ProjectDetail({ params }: { params: { id: string } }) {
           </div>
 
           <div className={styles.scriptsList}>
-            {project.scripts.map((script) => (
-              <div key={script.id} className={styles.scriptItem}>
-                <div className={styles.scriptItemHeader}>
-                  <h3>{script.title}</h3>
-                  <span className={`${styles.scriptStatus} ${styles[script.status.replace(/ /g, '-').toLowerCase()]}`}>
-                    {script.status}
-                  </span>
+            {scripts.length > 0 ? (
+              scripts.map((script) => (
+                <div key={script.id} className={styles.scriptItem}>
+                  <div className={styles.scriptItemHeader}>
+                    <h3>{script.title}</h3>
+                    <span className={`${styles.scriptStatus} ${styles[script.status.replace(/ /g, '-').toLowerCase()]}`}>
+                      {script.status}
+                    </span>
+                  </div>
+                  <p className={styles.scriptItemPreview}>{script.content.substring(0, 100)}...</p>
+                  <div className={styles.scriptItemActions}>
+                    <Link href={`/admin/project/${project.id}/script/${script.id}`} className={styles.editLink}>
+                      Editar
+                    </Link>
+                  </div>
                 </div>
-                <p className={styles.scriptItemPreview}>{script.content}</p>
-                <div className={styles.scriptItemActions}>
-                  <Link href={`/admin/project/${project.id}/script/${script.id}`} className={styles.editLink}>
-                    Editar
-                  </Link>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p style={{ color: '#666' }}>Nenhum roteiro criado ainda. Clique em "+ Adicionar" para começar.</p>
+            )}
           </div>
         </div>
       </div>

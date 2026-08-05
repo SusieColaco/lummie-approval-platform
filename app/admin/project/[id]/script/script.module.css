@@ -106,3 +106,25 @@
   border-color: var(--lummie-graphite);
   color: var(--lummie-black);
 }
+
+.deleteBtn {
+  padding: var(--space-md) var(--space-xl);
+  background: transparent;
+  color: #d32f2f;
+  border: 1px solid #d32f2f;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.deleteBtn:hover {
+  background: rgba(211, 47, 47, 0.05);
+  border-color: #b71c1c;
+}
+
+.deleteBtn:disabled,
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

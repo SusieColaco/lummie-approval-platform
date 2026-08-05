@@ -30,3 +30,9 @@ yarn-error.log*
 .idea/
 *.swp
 *.swo
+
+# Supabase CLI local cache
+/supabase/.temp/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo

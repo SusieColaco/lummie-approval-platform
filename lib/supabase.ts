@@ -86,7 +86,7 @@ export async function getProjectFiles(projectId: number) {
 // Salvar feedback de cliente
 export async function saveFeedback(
   scriptId: number,
-  projectId: number,
+  clientId: number,
   approvalStatus: 'aprovado' | 'reprovado' | 'alteracao',
   notes: string
 ) {
@@ -94,7 +94,7 @@ export async function saveFeedback(
     .from('feedback')
     .insert({
       script_id: scriptId,
-      project_id: projectId,
+      client_id: clientId,
       approval_status: approvalStatus,
       notes: notes,
     })

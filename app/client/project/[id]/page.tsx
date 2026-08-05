@@ -1,14 +1,22 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styles from './client-project.module.css'
 
 interface ProjectFile {
-  type: 'brand_book' | 'raio_x' | 'briefing'
+  id: number
   name: string
-  size: number
-  uploadedAt: string
+  file_path: string
+  type: 'brand_book' | 'raio_x' | 'briefing'
+  file_size: number
+  uploaded_at: string
+}
+
+interface Script {
+  id: number
+  title: string
+  status: string
 }
 
 const FILE_LABELS: Record<string, string> = {
@@ -17,30 +25,43 @@ const FILE_LABELS: Record<string, string> = {
   briefing: 'Briefing',
 }
 
-export default function ClientProjectPage() {
+export default function ClientProjectPage({ params }: { params: { id: string } }) {
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [files, setFiles] = useState<ProjectFile[]>([])
+  const [scripts, setScripts] = useState<Script[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Mock de arquivos (depois virá do Supabase)
-  const mockFiles: ProjectFile[] = [
-    {
-      type: 'brand_book',
-      name: 'Brand_Book_LUMMIE.pdf',
-      size: 5.2,
-      uploadedAt: '2026-08-03',
-    },
-    {
-      type: 'raio_x',
-      name: 'Raio_X_Projeto.pdf',
-      size: 2.8,
-      uploadedAt: '2026-08-02',
-    },
-    {
-      type: 'briefing',
-      name: 'Briefing_Executivo.pdf',
-      size: 1.5,
-      uploadedAt: '2026-08-01',
-    },
-  ]
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [filesRes, scriptsRes] = await Promise.all([
+          fetch(`/api/projects/${params.id}/files`),
+          fetch(`/api/projects/${params.id}/scripts`),
+        ])
+
+        if (!filesRes.ok || !scriptsRes.ok) {
+          throw new Error('Erro ao carregar dados do projeto')
+        }
+
+        const filesData = await filesRes.json()
+        const scriptsData = await scriptsRes.json()
+
+        setFiles(filesData || [])
+        setScripts(scriptsData || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar dados')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [params.id])
+
+  if (loading) {
+    return <div className={styles.container}><p>Carregando...</p></div>
+  }
 
   return (
     <div className={styles.container}>
@@ -51,33 +72,65 @@ export default function ClientProjectPage() {
         <p className={styles.subtitle}>Acesse os arquivos do seu projeto</p>
       </div>
 
-      <div className={styles.fileGrid}>
-        {mockFiles.map((file) => (
-          <div key={file.type} className={styles.fileCard}>
-            <h3 className={styles.fileType}>{FILE_LABELS[file.type]}</h3>
+      {error && <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#fee', color: '#c33', borderRadius: '4px' }}>{error}</div>}
 
-            <div className={styles.fileInfo}>
-              <div className={styles.fileName}>{file.name}</div>
-              <div className={styles.fileSize}>{file.size} MB</div>
-              <div className={styles.fileDate}>
-                {new Date(file.uploadedAt).toLocaleDateString('pt-BR')}
+      {files.length > 0 && (
+        <>
+          <h2 style={{ marginTop: '32px', marginBottom: '16px' }}>Arquivos</h2>
+          <div className={styles.fileGrid}>
+            {files.map((file) => (
+              <div key={file.id} className={styles.fileCard}>
+                <h3 className={styles.fileType}>{FILE_LABELS[file.type]}</h3>
+
+                <div className={styles.fileInfo}>
+                  <div className={styles.fileName}>{file.name}</div>
+                  <div className={styles.fileSize}>{(file.file_size / 1024 / 1024).toFixed(2)} MB</div>
+                  <div className={styles.fileDate}>
+                    {new Date(file.uploaded_at).toLocaleDateString('pt-BR')}
+                  </div>
+                </div>
+
+                <div className={styles.fileActions}>
+                  <button
+                    className={styles.viewBtn}
+                    onClick={() => setSelectedFile(file.file_path)}
+                  >
+                    Visualizar
+                  </button>
+                  <a href={`/api/download/${file.file_path}`} className={styles.downloadBtn}>
+                    Baixar
+                  </a>
+                </div>
               </div>
-            </div>
-
-            <div className={styles.fileActions}>
-              <button
-                className={styles.viewBtn}
-                onClick={() => setSelectedFile(file.type)}
-              >
-                Visualizar
-              </button>
-              <a href="#download" className={styles.downloadBtn}>
-                Baixar
-              </a>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
+
+      {scripts.length > 0 && (
+        <>
+          <h2 style={{ marginTop: '32px', marginBottom: '16px' }}>Roteiros</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {scripts.map((script) => (
+              <Link
+                key={script.id}
+                href={`/client/project/${params.id}/script/${script.id}`}
+                style={{
+                  padding: '16px',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  transition: 'border-color 0.2s',
+                }}
+              >
+                <div style={{ fontWeight: 500 }}>{script.title}</div>
+                <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '4px' }}>Status: {script.status}</div>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Preview Modal */}
       {selectedFile && (

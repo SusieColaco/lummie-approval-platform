@@ -1,25 +1,43 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { saveFeedback } from '@/lib/supabase'
 import styles from './client-script.module.css'
 
 interface Script {
   id: number
+  client_id: number
   title: string
   content: string
   status: string
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  aprovado: 'Aprovado',
+  reprovado: 'Reprovado',
+  alteracao: 'Pendente de edição',
+}
+
 export default function ClientViewScript({
   params
 }: {
-  params: { id: string; scriptId: string }
+  params: { scriptId: string }
 }) {
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token')
+
   const [script, setScript] = useState<Script | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [status, setStatus] = useState('padrao')
+  const [notes, setNotes] = useState('')
+  const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [audioPreview, setAudioPreview] = useState('')
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadScript() {
@@ -38,55 +56,49 @@ export default function ClientViewScript({
     loadScript()
   }, [params.scriptId])
 
-  const [formData, setFormData] = useState({
-    notes: '',
-    audioFile: null as File | null,
-    status: script.status === 'Aprovado' ? 'aprovado' : script.status === 'Pendente de edição' ? 'alteracao' : 'padrao',
-  })
-
-  const [audioPreview, setAudioPreview] = useState<string>('')
-  const [isSubmitted, setIsSubmitted] = useState(false)
-
-  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setFormData(prev => ({ ...prev, notes: e.target.value }))
-  }
-
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, status: e.target.value }))
-  }
-
   const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setFormData(prev => ({ ...prev, audioFile: file }))
+      setAudioFile(file)
       setAudioPreview(URL.createObjectURL(file))
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!script) return
+
+    setSubmitError(null)
+
+    const statusMap: Record<string, 'aprovado' | 'reprovado' | 'alteracao'> = {
+      aprovado: 'aprovado',
+      reprovado: 'reprovado',
+      alteracao: 'alteracao',
+    }
+
+    if (!statusMap[status]) {
+      setSubmitError('Selecione um status de aprovação')
+      return
+    }
+
     setIsSubmitted(true)
 
     try {
-      const statusMap: Record<string, 'aprovado' | 'reprovado' | 'alteracao'> = {
-        'aprovado': 'aprovado',
-        'reprovado': 'reprovado',
-        'alteracao': 'alteracao',
-      }
+      await saveFeedback(script.id, script.client_id, statusMap[status], notes)
 
-      await saveFeedback(
-        parseInt(params.scriptId),
-        parseInt(params.id),
-        statusMap[formData.status] || 'alteracao',
-        formData.notes
-      )
-    } catch (error) {
-      console.error('Erro ao salvar feedback:', error)
+      await fetch(`/api/scripts/${script.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: STATUS_LABEL[status] }),
+      })
+
+      setTimeout(() => {
+        window.location.href = `/client?token=${token}`
+      }, 1500)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Erro ao enviar feedback')
+      setIsSubmitted(false)
     }
-
-    setTimeout(() => {
-      window.location.href = `/client/project/${params.id}`
-    }, 1500)
   }
 
   if (loading) {
@@ -96,26 +108,20 @@ export default function ClientViewScript({
   if (error || !script) {
     return (
       <div className={styles.container}>
-        <Link href={`/client/project/${params.id}`} className={styles.back}>← Voltar</Link>
+        <Link href={`/client?token=${token}`} className={styles.back}>← Voltar</Link>
         <p style={{ color: '#c33' }}>{error || 'Roteiro não encontrado'}</p>
       </div>
     )
   }
 
-  const statusOptions = [
-    { value: 'aprovado', label: '✓ Aprovado', color: '#4ade80' },
-    { value: 'reprovado', label: '✗ Reprovado', color: '#ef4444' },
-    { value: 'alteracao', label: '⋯ Com Alteração Solicitada', color: '#f97316' },
-  ]
-
   return (
     <div className={styles.container}>
-      <Link href={`/client/project/${params.id}`} className={styles.back}>← Voltar</Link>
+      <Link href={`/client?token=${token}`} className={styles.back}>← Voltar</Link>
 
       <div className={styles.scriptHeader}>
         <div>
           <h1>{script.title}</h1>
-          <p className={styles.subtitle}>Roteiro #{params.scriptId}</p>
+          <p className={styles.subtitle}>Status atual: {script.status}</p>
         </div>
       </div>
 
@@ -129,12 +135,14 @@ export default function ClientViewScript({
       <form onSubmit={handleSubmit} className={styles.feedbackForm}>
         <h2>Suas Observações</h2>
 
+        {submitError && <p style={{ color: '#c33', marginBottom: '16px' }}>{submitError}</p>}
+
         <div className={styles.formGroup}>
           <label htmlFor="status">Status de Aprovação</label>
           <select
             id="status"
-            value={formData.status}
-            onChange={handleStatusChange}
+            value={status}
+            onChange={e => setStatus(e.target.value)}
             className={styles.statusSelect}
           >
             <option value="padrao">Selecione um status...</option>
@@ -148,8 +156,8 @@ export default function ClientViewScript({
           <label htmlFor="notes">Anotações e Comentários</label>
           <textarea
             id="notes"
-            value={formData.notes}
-            onChange={handleNoteChange}
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
             placeholder="Deixe aqui suas observações, sugestões ou detalhes sobre o que precisa ser alterado..."
             rows={8}
             className={styles.notesArea}
@@ -167,7 +175,7 @@ export default function ClientViewScript({
               className={styles.audioFile}
             />
             <span className={styles.audioLabel}>
-              {formData.audioFile ? `📁 ${formData.audioFile.name}` : '🎙️ Clique para selecionar áudio'}
+              {audioFile ? `📁 ${audioFile.name}` : '🎙️ Clique para selecionar áudio'}
             </span>
           </div>
           {audioPreview && (
@@ -181,7 +189,7 @@ export default function ClientViewScript({
           <button type="submit" className={styles.submitBtn} disabled={isSubmitted}>
             {isSubmitted ? '✓ Enviado!' : 'Enviar Feedback'}
           </button>
-          <Link href={`/client/project/${params.id}`} className={styles.cancelBtn}>Voltar</Link>
+          <Link href={`/client?token=${token}`} className={styles.cancelBtn}>Voltar</Link>
         </div>
       </form>
     </div>

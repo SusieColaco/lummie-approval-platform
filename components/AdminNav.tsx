@@ -18,7 +18,7 @@ export default function AdminNav({ onLogout }: AdminNavProps) {
           <span className={styles.label}>01</span>
           Projetos
         </Link>
-        <Link href="/admin/clients" className={styles.menuItem}>
+        <Link href="/admin/clientes" className={styles.menuItem}>
           <span className={styles.label}>02</span>
           Clientes
         </Link>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { createScript } from '@/lib/supabase'
 import styles from '../script.module.css'
 
 export default function NewScript({ params }: { params: { id: string } }) {
@@ -9,12 +10,21 @@ export default function NewScript({ params }: { params: { id: string } }) {
     title: '',
     content: '',
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Save to database
-    console.log('New script:', formData)
-    window.location.href = `/admin/project/${params.id}`
+    setLoading(true)
+    setError(null)
+
+    try {
+      await createScript(Number(params.id), formData.title, formData.content)
+      window.location.href = `/admin/project/${params.id}`
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar roteiro')
+      setLoading(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -31,6 +41,8 @@ export default function NewScript({ params }: { params: { id: string } }) {
         <p className={styles.subtitle}>Projeto ID: {params.id}</p>
       </div>
 
+      {error && <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#fee', color: '#c33', borderRadius: '4px' }}>{error}</div>}
+
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.formGroup}>
           <label htmlFor="title">Título do Roteiro</label>
@@ -42,6 +54,7 @@ export default function NewScript({ params }: { params: { id: string } }) {
             onChange={handleChange}
             placeholder="ex: Introdução, Proposta de Valor..."
             required
+            disabled={loading}
           />
         </div>
 
@@ -55,11 +68,14 @@ export default function NewScript({ params }: { params: { id: string } }) {
             placeholder="Digite aqui o conteúdo do roteiro..."
             rows={12}
             required
+            disabled={loading}
           />
         </div>
 
         <div className={styles.formActions}>
-          <button type="submit" className={styles.submitBtn}>Criar Roteiro</button>
+          <button type="submit" className={styles.submitBtn} disabled={loading}>
+            {loading ? 'Criando...' : 'Criar Roteiro'}
+          </button>
           <Link href={`/admin/project/${params.id}`} className={styles.cancelBtn}>Cancelar</Link>
         </div>
       </form>
