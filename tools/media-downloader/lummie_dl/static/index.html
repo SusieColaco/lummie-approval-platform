@@ -165,7 +165,7 @@
             </select>
           </div>
         </div>
-        <div class="hint">Gera .txt (texto corrido), .srt (legenda com tempos) e .json. Na primeira vez o modelo é baixado.</div>
+        <div class="hint">Gera .txt com minutagem, .txt só texto, .srt (legenda) e .json. Na primeira vez o modelo é baixado.</div>
       </div>
     </div>
 
@@ -207,7 +207,11 @@
     <div id="tr-block" class="hidden">
       <div class="row" style="margin-top: 22px; align-items: center">
         <label class="lbl" style="margin: 0">Transcrição <span id="tr-lang" style="color: var(--muted)"></span></label>
-        <button class="btn-ghost" id="copy" style="flex: none; padding: 8px 14px; font-size: 13px">Copiar texto</button>
+        <div class="seg" id="tr-view" style="flex: none">
+          <button data-v="timed" class="on" style="padding: 7px 12px; font-size: 13px">Com minutagem</button>
+          <button data-v="plain" style="padding: 7px 12px; font-size: 13px">Só o texto</button>
+        </div>
+        <button class="btn-ghost" id="copy" style="flex: none; padding: 8px 14px; font-size: 13px">Copiar</button>
       </div>
       <pre class="transcript" id="transcript"></pre>
     </div>
@@ -321,14 +325,20 @@ async function poll(id) {
 function show(id, r) {
   $('go').disabled = false;
   const links = [`<a class="file" href="/api/jobs/${id}/file/media" download>⬇ ${r.media_name}</a>`];
-  if (r.transcript_txt) links.push(`<a class="file" href="/api/jobs/${id}/file/txt" download>.txt</a>`, `<a class="file" href="/api/jobs/${id}/file/srt" download>.srt</a>`, `<a class="file" href="/api/jobs/${id}/file/json" download>.json</a>`);
+  if (r.transcript_txt) links.push(`<a class="file" href="/api/jobs/${id}/file/timed" download>.txt com minutagem</a>`, `<a class="file" href="/api/jobs/${id}/file/txt" download>.txt só texto</a>`, `<a class="file" href="/api/jobs/${id}/file/srt" download>.srt</a>`, `<a class="file" href="/api/jobs/${id}/file/json" download>.json</a>`);
   $('files').innerHTML = links.join('');
   $('out-path').textContent = 'Salvo em: ' + r.media_path;
   $('tr-block').classList.toggle('hidden', !r.transcript_text);
-  if (r.transcript_text) { $('transcript').textContent = r.transcript_text; $('tr-lang').textContent = r.transcript_language ? `· ${r.transcript_language}` : ''; }
+  if (r.transcript_text) { transcripts = { timed: r.transcript_timed_text, plain: r.transcript_text }; renderTranscript(); $('tr-lang').textContent = r.transcript_language ? `· ${r.transcript_language}` : ''; }
   $('result').classList.remove('hidden'); $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-$('copy').onclick = async () => { try { await navigator.clipboard.writeText($('transcript').textContent); $('copy').textContent = 'Copiado ✓'; setTimeout(() => $('copy').textContent = 'Copiar texto', 1500); } catch {} };
+let transcripts = { timed: '', plain: '' };
+const trView = () => $('tr-view').querySelector('.on').dataset.v;
+const renderTranscript = () => { $('transcript').textContent = transcripts[trView()] || ''; };
+$('tr-view').querySelectorAll('button').forEach(b => b.onclick = () => {
+  $('tr-view').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); renderTranscript();
+});
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText($('transcript').textContent); $('copy').textContent = 'Copiado ✓'; setTimeout(() => $('copy').textContent = 'Copiar', 1500); } catch {} };
 </script>
 </body>
 </html>

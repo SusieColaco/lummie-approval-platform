@@ -228,9 +228,11 @@ class DownloadResult:
     media_path: Path
     info: MediaInfo
     transcript_txt: Optional[Path] = None
+    transcript_timed_txt: Optional[Path] = None
     transcript_srt: Optional[Path] = None
     transcript_json: Optional[Path] = None
     transcript_text: Optional[str] = None
+    transcript_timed_text: Optional[str] = None
     transcript_language: Optional[str] = None
 
     def to_dict(self) -> dict:
@@ -239,9 +241,11 @@ class DownloadResult:
             "media_name": self.media_path.name,
             "info": self.info.to_dict(),
             "transcript_txt": str(self.transcript_txt) if self.transcript_txt else None,
+            "transcript_timed_txt": str(self.transcript_timed_txt) if self.transcript_timed_txt else None,
             "transcript_srt": str(self.transcript_srt) if self.transcript_srt else None,
             "transcript_json": str(self.transcript_json) if self.transcript_json else None,
             "transcript_text": self.transcript_text,
+            "transcript_timed_text": self.transcript_timed_text,
             "transcript_language": self.transcript_language,
         }
 
@@ -310,12 +314,15 @@ def download(req: DownloadRequest, progress: Optional[ProgressCallback] = None) 
         tr = transcribe(final_path, language=req.language, model_size=req.whisper_model, progress=notify)
         base = final_path.with_suffix("")
         result.transcript_txt = Path(f"{base}.txt")
+        result.transcript_timed_txt = Path(f"{base}.minutagem.txt")
         result.transcript_srt = Path(f"{base}.srt")
         result.transcript_json = Path(f"{base}.transcricao.json")
         result.transcript_txt.write_text(tr["text"], encoding="utf-8")
+        result.transcript_timed_txt.write_text(tr["timed_text"], encoding="utf-8")
         result.transcript_srt.write_text(tr["srt"], encoding="utf-8")
         result.transcript_json.write_text(json.dumps(tr["segments"], ensure_ascii=False, indent=2), encoding="utf-8")
         result.transcript_text = tr["text"]
+        result.transcript_timed_text = tr["timed_text"]
         result.transcript_language = tr["language"]
 
     notify("done", 1.0, "Pronto.")
@@ -443,7 +450,7 @@ def transcribe(
     model_size: str = "small",
     progress: Optional[ProgressCallback] = None,
 ) -> dict:
-    """Transcreve um arquivo de áudio/vídeo. Retorna text, srt, segments e language."""
+    """Transcreve um arquivo de áudio/vídeo. Retorna text, timed_text, srt, segments e language."""
     notify = progress or (lambda stage, frac, msg: None)
     notify("transcribe", 0.0, f"Carregando modelo de transcrição ({model_size})… na primeira vez ele é baixado.")
     model = _load_whisper(model_size)
@@ -458,6 +465,7 @@ def transcribe(
 
     segments: list[dict] = []
     lines_txt: list[str] = []
+    lines_timed: list[str] = []
     lines_srt: list[str] = []
     for i, seg in enumerate(segments_iter, start=1):
         text = seg.text.strip()
@@ -465,6 +473,7 @@ def transcribe(
             continue
         segments.append({"start": round(seg.start, 3), "end": round(seg.end, 3), "text": text})
         lines_txt.append(text)
+        lines_timed.append(f"[{format_timestamp(seg.start)[:8]}] {text}")
         lines_srt.append(
             f"{i}\n{format_timestamp(seg.start, srt=True)} --> {format_timestamp(seg.end, srt=True)}\n{text}\n"
         )
@@ -474,6 +483,7 @@ def transcribe(
 
     return {
         "text": "\n".join(lines_txt).strip(),
+        "timed_text": "\n".join(lines_timed).strip(),
         "srt": "\n".join(lines_srt).strip() + "\n",
         "segments": segments,
         "language": getattr(meta, "language", None),

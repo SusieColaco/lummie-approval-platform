@@ -42,6 +42,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--start", help="início do trecho (ex.: 90, 1:30 ou 00:01:30)")
     p.add_argument("--end", help="fim do trecho (ex.: 150, 2:30 ou 00:02:30)")
     p.add_argument("--transcribe", action="store_true", help="transcreve o áudio (gera .txt, .srt e .json)")
+    p.add_argument("--timestamps", action="store_true", help="mostra a transcrição na tela com minutagem [hh:mm:ss]")
     p.add_argument("--language", help="idioma da transcrição (pt, en…). Padrão: detectar")
     p.add_argument("--model", choices=["tiny", "base", "small", "medium", "large-v3"], default="small",
                    help="modelo Whisper (maior = mais preciso e mais lento)")
@@ -102,10 +103,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\nArquivo:      {result.media_path}")
     if result.transcript_txt:
         print(f"Transcrição:  {result.transcript_txt}")
+        print(f"C/ minutagem: {result.transcript_timed_txt}")
         print(f"Legenda SRT:  {result.transcript_srt}")
         print(f"Idioma:       {result.transcript_language or '-'}")
         print("\n--- Transcrição ---")
-        print(result.transcript_text)
+        print(result.transcript_timed_text if args.timestamps else result.transcript_text)
     return 0
 
 

@@ -124,8 +124,8 @@ def api_get_file(job_id: str, kind: str) -> FileResponse:
         job = _jobs.get(job_id)
     if not job or job["status"] != "done":
         raise HTTPException(status_code=404, detail="Arquivo ainda não disponível")
-    key = {"media": "media_path", "txt": "transcript_txt", "srt": "transcript_srt",
-           "json": "transcript_json"}.get(kind)
+    key = {"media": "media_path", "txt": "transcript_txt", "timed": "transcript_timed_txt",
+           "srt": "transcript_srt", "json": "transcript_json"}.get(kind)
     path = job["result"].get(key) if key else None
     if not path or not Path(path).exists():
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")

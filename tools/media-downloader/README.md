@@ -24,8 +24,9 @@ Os arquivos vão para `~/Downloads/Lummie Downloads` (mude com a variável de am
 2. Escolha **Vídeo · MP4** (com limite de resolução) ou **Só o áudio** (MP3, WAV ou M4A).
 3. Marque **Baixar só um trecho** e arraste o slider ou digite início/fim (`1:30`, `00:01:30`, `90`).
    O corte é exato no frame.
-4. Marque **Transcrever o áudio** para gerar `.txt`, `.srt` (legenda com tempos) e `.json`.
-   O texto aparece na tela com botão de copiar.
+4. Marque **Transcrever o áudio** para gerar `.minutagem.txt` (cada fala com `[hh:mm:ss]`),
+   `.txt` (só o texto), `.srt` (legenda) e `.json`. O texto aparece na tela com botão de copiar
+   e um seletor "Com minutagem / Só o texto".
 5. **Baixar**. A barra mostra o andamento e no fim aparecem os links dos arquivos.
 
 ## Linha de comando
@@ -38,6 +39,7 @@ lummie-dl URL --quality 1080                               # limita a 1080p
 lummie-dl URL --audio --audio-format wav                   # só o áudio
 lummie-dl URL --start 01:10 --end 02:30                    # só um trecho
 lummie-dl URL --transcribe --language pt                   # baixa e transcreve
+lummie-dl URL --transcribe --timestamps                    # mostra na tela com minutagem
 lummie-dl URL --start 10:00 --end 12:00 --audio --transcribe
 lummie-dl URL --info                                       # só mostra os dados
 lummie-dl URL --out ~/Projetos/Cliente                     # pasta de saída
