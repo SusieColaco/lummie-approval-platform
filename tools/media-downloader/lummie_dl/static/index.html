@@ -50,13 +50,41 @@
   .sub { margin: 14px 0 0 30px; display: none; }
   .sub.open { display: block; }
   .hint { color: var(--muted); font-size: 13px; margin-top: 8px; line-height: 1.5; }
-  /* slider duplo */
-  .range { position: relative; height: 34px; margin: 14px 0 4px; }
-  .range input[type=range] { position: absolute; left: 0; right: 0; top: 0; width: 100%; height: 34px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
-  .range input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--black); border: 2px solid var(--cream); box-shadow: 0 0 0 1px var(--black); cursor: grab; }
-  .range input[type=range]::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--black); border: 2px solid var(--cream); cursor: grab; }
-  .range .track { position: absolute; left: 0; right: 0; top: 15px; height: 4px; background: #ddd6c8; border-radius: 2px; }
-  .range .fill { position: absolute; top: 15px; height: 4px; background: var(--gold); border-radius: 2px; }
+  /* editor de trecho (mini player) */
+  .player { display: flex; justify-content: center; background: #0c0b0b; border-radius: 14px; overflow: hidden; cursor: pointer; }
+  .player video { display: block; max-width: 100%; max-height: min(52vh, 460px); }
+  .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; }
+  .transport .spacer { flex: 1; }
+  .pbtn { width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--black); color: var(--cream); display: grid; place-items: center; flex: none; }
+  .pbtn svg { width: 16px; height: 16px; fill: currentColor; }
+  .clock { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--graphite); white-space: nowrap; }
+  .clock b { color: var(--black); font-weight: 600; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: var(--black); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .chip:hover { border-color: var(--gold); }
+  .chip.toggle { position: relative; }
+  .chip.toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .chip.toggle:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .chip.toggle:has(input:checked) { background: var(--black); color: var(--cream); border-color: var(--black); }
+  .timeline { position: relative; height: 64px; margin: 28px 14px 12px; user-select: none; -webkit-user-select: none; touch-action: none; cursor: pointer; }
+  .strip { position: absolute; inset: 0; border-radius: 8px; background: #ddd6c8 center / 100% 100% no-repeat; }
+  .dim { position: absolute; top: 0; bottom: 0; background: rgba(17,16,16,.62); pointer-events: none; }
+  .dim-l { left: 0; border-radius: 8px 0 0 8px; }
+  .dim-r { right: 0; border-radius: 0 8px 8px 0; }
+  .sel { position: absolute; top: -3px; bottom: -3px; border: 3px solid var(--gold); border-left: 0; border-right: 0; pointer-events: none; }
+  .handle { position: absolute; top: -3px; bottom: -3px; width: 16px; margin-left: -8px; background: var(--gold); border-radius: 6px; cursor: ew-resize; touch-action: none; display: grid; place-items: center; z-index: 3; }
+  .handle::before { content: ""; width: 2px; height: 22px; background: var(--black); border-radius: 1px; opacity: .55; }
+  .handle::after { content: ""; position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
+  .playhead { position: absolute; top: -10px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--black); z-index: 4; pointer-events: none; box-shadow: 0 0 0 1px rgba(244,240,231,.85); }
+  .playhead::before { content: ""; position: absolute; top: 0; left: -5px; border: 6px solid transparent; border-top-color: var(--black); border-bottom: 0; }
+  .dur { padding: 13px 0; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .times { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) {
+    #cut-sub.sub { margin-left: 0; }
+    .times { grid-template-columns: 1fr 1fr; }
+    .times > :last-child { grid-column: 1 / -1; }
+    .times .dur { padding: 0; }
+    .player video { max-height: min(40vh, 420px); }
+  }
   .progress { height: 6px; background: #e4ded2; border-radius: 3px; overflow: hidden; margin: 14px 0 10px; }
   .progress i { display: block; height: 100%; background: var(--gold); width: 0; transition: width .3s; }
   .progress.indet i { width: 30%; animation: slide 1.2s infinite ease-in-out; }
@@ -127,16 +155,41 @@
     <div class="opt">
       <label class="check"><input type="checkbox" id="cut"> Baixar só um trecho</label>
       <div class="sub" id="cut-sub">
-        <div class="range" id="range">
-          <div class="track"></div><div class="fill" id="fill"></div>
-          <input type="range" id="r-start" min="0" max="100" step="0.1" value="0">
-          <input type="range" id="r-end" min="0" max="100" step="0.1" value="100">
+        <div class="prep" id="prep">
+          <div class="progress indet" id="prep-progress"><i id="prep-bar"></i></div>
+          <div class="status" id="prep-status">Preparando a prévia…</div>
+          <div class="error hidden" id="prep-error"></div>
         </div>
-        <div class="row">
-          <div><label class="lbl" for="start">Início</label><input type="text" id="start" placeholder="00:00:00"></div>
-          <div><label class="lbl" for="end">Fim</label><input type="text" id="end" placeholder="00:00:00"></div>
+        <div class="stage hidden" id="stage">
+          <div class="player" id="player"><video id="video" playsinline preload="auto"></video></div>
+          <div class="transport">
+            <button class="pbtn" id="btn-play" title="Tocar / pausar (espaço)" aria-label="Tocar ou pausar">
+              <svg id="ico-play" viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z"/></svg>
+              <svg id="ico-pause" class="hidden" viewBox="0 0 16 16"><path d="M3.5 2h3.2v12H3.5zM9.3 2h3.2v12H9.3z"/></svg>
+            </button>
+            <span class="clock"><b id="clock-now">00:00.0</b> / <span id="clock-total">00:00.0</span></span>
+            <span class="spacer"></span>
+            <button class="chip" id="btn-in" title="Marcar o início no ponto atual (tecla I)">Marcar início</button>
+            <button class="chip" id="btn-out" title="Marcar o fim no ponto atual (tecla O)">Marcar fim</button>
+            <button class="chip" id="btn-sel" title="Tocar só o trecho escolhido">Ver trecho</button>
+            <label class="chip toggle" title="Repetir o trecho"><input type="checkbox" id="loop">Repetir</label>
+          </div>
+          <div class="timeline" id="timeline">
+            <div class="strip" id="strip"></div>
+            <div class="dim dim-l" id="dim-l"></div>
+            <div class="dim dim-r" id="dim-r"></div>
+            <div class="sel" id="sel"></div>
+            <div class="handle" id="h-l" title="Início do trecho"></div>
+            <div class="handle" id="h-r" title="Fim do trecho"></div>
+            <div class="playhead" id="playhead"></div>
+          </div>
         </div>
-        <div class="hint">O corte é exato no frame. Só o trecho é processado, então é rápido mesmo em vídeos longos.</div>
+        <div class="times">
+          <div><label class="lbl" for="start">Início</label><input type="text" id="start" placeholder="00:00:00.0"></div>
+          <div><label class="lbl" for="end">Fim</label><input type="text" id="end" placeholder="00:00:00.0"></div>
+          <div><label class="lbl">Duração</label><div class="dur" id="dur">—</div></div>
+        </div>
+        <div class="hint">Arraste as alças douradas para escolher o trecho. Setas andam quadro a quadro (Shift = 1 segundo), I e O marcam início e fim no ponto atual, espaço toca. O corte final é exato no frame e sai na qualidade original; a prévia é só uma versão leve para você escolher.</div>
       </div>
     </div>
 
@@ -255,7 +308,7 @@ async function analyze() {
     const q = $('quality'); q.innerHTML = '<option value="best">Melhor disponível' + (info.heights[0] ? ` (${info.heights[0]}p)` : '') + '</option>';
     [2160, 1440, 1080, 720, 480].filter(h => !info.heights.length || info.heights.some(x => x >= h) || h <= 1080)
       .forEach(h => q.insertAdjacentHTML('beforeend', `<option value="${h}">até ${h}p</option>`));
-    setupRange(info.duration);
+    resetEditor();
     $('options').classList.remove('hidden');
   } catch (e) {
     $('info-error').textContent = e.message; $('info-error').classList.remove('hidden');
@@ -270,38 +323,204 @@ $('mode').querySelectorAll('button').forEach(b => b.onclick = () => {
 });
 const mode = () => $('mode').querySelector('.on').dataset.v;
 
-// ---- Trecho
-$('cut').onchange = () => $('cut-sub').classList.toggle('open', $('cut').checked);
+// ---- Editor de trecho (mini player)
+const MIN_LEN = 0.2;
+const ed = { ready: false, loading: false, key: null, duration: 0, fps: 30, start: 0, end: 0, playSel: false };
+const video = $('video');
+const tl = $('timeline');
+let raf = 0, previewToken = 0, drag = null;
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fmtMs = (s) => {
+  s = Math.max(0, s || 0);
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = Math.floor((s % 60) * 10) / 10;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${sec.toFixed(1).padStart(4, '0')}`;
+};
+const fmtClock = (s) => { const f = fmtMs(s); return s >= 3600 ? f : f.slice(3); };
+
+$('cut').onchange = () => {
+  $('cut-sub').classList.toggle('open', $('cut').checked);
+  if ($('cut').checked) { if (!ed.ready && !ed.loading) startPreview(); } else video.pause();
+  $('cut').blur();
+};
 $('transcribe').onchange = () => $('tr-sub').classList.toggle('open', $('transcribe').checked);
 
-function setupRange(duration) {
-  const has = !!duration; $('range').style.display = has ? '' : 'none';
-  if (!has) { $('start').value = ''; $('end').value = ''; return; }
-  const rs = $('r-start'), re = $('r-end');
-  rs.max = re.max = duration; rs.value = 0; re.value = duration;
-  $('start').value = fmt(0); $('end').value = fmt(duration);
-  const paint = () => { const a = +rs.value, b = +re.value; $('fill').style.left = (a/duration*100) + '%'; $('fill').style.width = ((b-a)/duration*100) + '%'; };
-  rs.oninput = () => { if (+rs.value >= +re.value) rs.value = Math.max(0, +re.value - 1); $('start').value = fmt(+rs.value); paint(); };
-  re.oninput = () => { if (+re.value <= +rs.value) re.value = Math.min(duration, +rs.value + 1); $('end').value = fmt(+re.value); paint(); };
-  $('start').onchange = () => { const v = parse($('start').value); if (v !== null) { rs.value = Math.min(v, duration); $('start').value = fmt(+rs.value); paint(); } };
-  $('end').onchange = () => { const v = parse($('end').value); if (v !== null) { re.value = Math.min(v, duration); $('end').value = fmt(+re.value); paint(); } };
-  paint();
+function setPrep(frac, msg) {
+  $('prep-progress').classList.toggle('indet', frac < 0);
+  $('prep-bar').style.width = frac >= 0 ? (frac * 100) + '%' : '';
+  $('prep-status').textContent = msg;
+}
+function prepFail(msg) {
+  ed.loading = false;
+  $('prep-progress').classList.add('hidden'); $('prep-status').textContent = '';
+  $('prep-error').textContent = msg + '\nVocê ainda pode digitar o início e o fim nos campos abaixo.';
+  $('prep-error').classList.remove('hidden');
+}
+
+async function startPreview() {
+  if (!info) return;
+  ed.loading = true;
+  const token = ++previewToken;
+  $('prep').classList.remove('hidden'); $('prep-progress').classList.remove('hidden'); $('prep-error').classList.add('hidden');
+  setPrep(-1, 'Preparando a prévia. Ela é leve e só serve para você escolher o trecho.');
+  try {
+    const { id } = await post('/api/preview', { url: $('url').value.trim(), cookies_browser: $('cookies').value || null });
+    pollJob(id,
+      (j) => { if (token === previewToken) setPrep(j.progress, j.message); },
+      (r) => { if (token === previewToken) prepReady(r); },
+      (e) => { if (token === previewToken) prepFail(e); });
+  } catch (e) { if (token === previewToken) prepFail(e.message); }
+}
+
+function prepReady(r) {
+  ed.key = r.key; ed.duration = r.duration; ed.fps = r.fps || 30; ed.start = 0; ed.end = r.duration; ed.playSel = false;
+  $('strip').style.backgroundImage = r.filmstrip_url ? `url(${r.filmstrip_url})` : '';
+  $('clock-total').textContent = fmtClock(r.duration);
+  video.onloadedmetadata = () => {
+    ed.ready = true; ed.loading = false;
+    $('prep').classList.add('hidden'); $('stage').classList.remove('hidden');
+    renderSel(); renderHead(); syncPlayBtn();
+  };
+  video.onerror = () => prepFail('O navegador não conseguiu abrir a prévia.');
+  video.src = r.video_url;
+}
+
+function resetEditor() {
+  previewToken++; ed.ready = false; ed.loading = false; ed.key = null; ed.playSel = false;
+  video.onloadedmetadata = null; video.onerror = null;
+  video.pause(); video.removeAttribute('src'); video.load();
+  $('stage').classList.add('hidden'); $('prep').classList.remove('hidden');
+  $('prep-error').classList.add('hidden'); $('prep-progress').classList.remove('hidden');
+  $('start').value = ''; $('end').value = ''; $('dur').textContent = '—';
+  if ($('cut').checked) startPreview();
+}
+
+// seleção e playhead
+function renderSel() {
+  if (!ed.ready) return;
+  const d = ed.duration, pct = (v) => (v / d * 100) + '%';
+  $('h-l').style.left = pct(ed.start); $('h-r').style.left = pct(ed.end);
+  $('sel').style.left = pct(ed.start); $('sel').style.width = ((ed.end - ed.start) / d * 100) + '%';
+  $('dim-l').style.width = pct(ed.start); $('dim-r').style.left = pct(ed.end);
+  $('start').value = fmtMs(ed.start); $('end').value = fmtMs(ed.end); $('dur').textContent = fmtMs(ed.end - ed.start);
+}
+function renderHead() {
+  if (!ed.ready) return;
+  const t = video.currentTime || 0;
+  $('playhead').style.left = (t / ed.duration * 100) + '%';
+  $('clock-now').textContent = fmtClock(t);
+}
+const setStart = (v) => { ed.start = clamp(v, 0, ed.end - MIN_LEN); renderSel(); };
+const setEnd = (v) => { ed.end = clamp(v, ed.start + MIN_LEN, ed.duration); renderSel(); };
+const seek = (v) => { video.currentTime = clamp(v, 0, ed.duration); renderHead(); };
+
+// arrastar alças e a linha do tempo
+const timeAt = (e) => { const r = tl.getBoundingClientRect(); return clamp((e.clientX - r.left) / r.width, 0, 1) * ed.duration; };
+function bindDrag(el, kind, onMove) {
+  el.addEventListener('pointerdown', (e) => {
+    if (!ed.ready) return;
+    e.preventDefault(); e.stopPropagation();
+    video.pause(); ed.playSel = false; drag = kind; el.setPointerCapture(e.pointerId); onMove(timeAt(e));
+  });
+  el.addEventListener('pointermove', (e) => { if (drag === kind) onMove(timeAt(e)); });
+  const stop = () => { if (drag === kind) drag = null; };
+  el.addEventListener('pointerup', stop); el.addEventListener('pointercancel', stop);
+}
+bindDrag($('h-l'), 'l', (t) => { setStart(t); seek(ed.start); });
+bindDrag($('h-r'), 'r', (t) => { setEnd(t); seek(ed.end); });
+bindDrag(tl, 'head', (t) => seek(t));
+
+// reprodução
+function syncPlayBtn() { $('ico-play').classList.toggle('hidden', !video.paused); $('ico-pause').classList.toggle('hidden', video.paused); }
+function playFrom(t, constrained) { ed.playSel = constrained; seek(t); video.play().catch(() => {}); }
+function togglePlay() {
+  if (!ed.ready) return;
+  if (!video.paused) { video.pause(); return; }
+  const t = video.currentTime;
+  if (t < ed.start - 0.05) playFrom(t, false);
+  else if (t >= ed.end - 0.05) playFrom(ed.start, true);
+  else playFrom(t, true);
+}
+function tick() {
+  renderHead();
+  if (ed.playSel && video.currentTime >= ed.end) {
+    if ($('loop').checked) video.currentTime = ed.start;
+    else { video.pause(); seek(ed.end); ed.playSel = false; }
+  }
+  if (!video.paused) raf = requestAnimationFrame(tick);
+}
+video.addEventListener('play', () => { syncPlayBtn(); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); });
+video.addEventListener('pause', () => { syncPlayBtn(); renderHead(); });
+video.addEventListener('seeked', renderHead);
+video.addEventListener('ended', () => {
+  if (ed.playSel && $('loop').checked) playFrom(ed.start, true);
+  else { ed.playSel = false; syncPlayBtn(); }
+});
+// depois de um clique de mouse nos controles, tira o foco deles para o espaço sempre tocar/pausar
+// (cliques por teclado têm detail 0 e mantêm o foco)
+$('stage').addEventListener('click', (e) => {
+  if (e.detail > 0 && e.target.closest('button, label')) setTimeout(() => document.activeElement?.blur?.(), 0);
+});
+$('btn-play').onclick = togglePlay;
+$('player').onclick = togglePlay;
+$('btn-sel').onclick = () => { if (ed.ready) playFrom(ed.start, true); };
+$('btn-in').onclick = () => { if (ed.ready) setStart(video.currentTime); };
+$('btn-out').onclick = () => { if (ed.ready) setEnd(video.currentTime); };
+
+function step(dir, big) {
+  video.pause(); ed.playSel = false;
+  if (big) return seek(video.currentTime + dir);
+  const frame = Math.floor(video.currentTime * ed.fps + 1e-6); // quadro atual
+  seek((frame + dir + 0.5) / ed.fps); // meio do quadro vizinho, evita cair na borda
+}
+document.addEventListener('keydown', (e) => {
+  if (!ed.ready || !$('cut').checked || e.metaKey || e.ctrlKey || e.altKey) return;
+  const el = e.target, tag = el.tagName;
+  if (tag === 'SELECT' || tag === 'TEXTAREA' || (tag === 'INPUT' && !['checkbox', 'radio'].includes(el.type))) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ' && tag !== 'INPUT' && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); }
+  else if (k === 'i') setStart(video.currentTime);
+  else if (k === 'o') setEnd(video.currentTime);
+  else if (k === 'arrowleft') { e.preventDefault(); step(-1, e.shiftKey); }
+  else if (k === 'arrowright') { e.preventDefault(); step(1, e.shiftKey); }
+});
+
+// campos de texto
+$('start').onchange = () => { const v = parse($('start').value); if (!ed.ready) return; if (v === null) return renderSel(); setStart(v); seek(ed.start); };
+$('end').onchange = () => { const v = parse($('end').value); if (!ed.ready) return; if (v === null) return renderSel(); setEnd(v); seek(ed.end); };
+
+function cutForDownload() {
+  if (!$('cut').checked) return { start: null, end: null };
+  let s = ed.ready ? ed.start : parse($('start').value), e = ed.ready ? ed.end : parse($('end').value);
+  const dur = ed.ready ? ed.duration : info?.duration;
+  if (s !== null && s <= 0.05) s = null;
+  if (e !== null && dur && e >= dur - 0.05) e = null;
+  return { start: s === null ? null : s.toFixed(3), end: e === null ? null : e.toFixed(3) };
+}
+
+async function pollJob(id, onProgress, onDone, onError) {
+  try {
+    const j = await (await fetch(`/api/jobs/${id}`)).json();
+    if (j.status === 'error') return onError(j.error);
+    onProgress(j);
+    if (j.status === 'done') return onDone(j.result);
+    setTimeout(() => pollJob(id, onProgress, onDone, onError), 600);
+  } catch (e) { onError(e.message); }
 }
 
 // ---- Baixar
 $('go').onclick = async () => {
   const body = {
     url: $('url').value.trim(), mode: mode(), quality: $('quality').value, audio_format: $('audio_format').value,
-    start: $('cut').checked ? $('start').value : null, end: $('cut').checked ? $('end').value : null,
+    start: cutForDownload().start, end: cutForDownload().end,
     transcribe: $('transcribe').checked,
     language: $('language').value || null, whisper_model: $('model').value, cookies_browser: $('cookies').value || null,
   };
-  if (body.start !== null && body.end && info?.duration && parse(body.end) >= info.duration) body.end = null; // "até o fim"
   $('go').disabled = true; $('result').classList.add('hidden'); $('job-error').classList.add('hidden');
   $('progress-card').classList.remove('hidden'); setProgress(-1, 'Enviando…');
   try {
     const { id } = await post('/api/jobs', body);
-    poll(id);
+    pollJob(id, (j) => setProgress(j.progress, j.message), (r) => show(id, r), fail);
   } catch (e) { fail(e.message); }
 };
 
@@ -311,16 +530,6 @@ function setProgress(frac, msg) {
   $('status').textContent = msg;
 }
 function fail(msg) { $('job-error').textContent = msg; $('job-error').classList.remove('hidden'); setProgress(0, 'Falhou.'); $('go').disabled = false; }
-
-async function poll(id) {
-  try {
-    const j = await (await fetch(`/api/jobs/${id}`)).json();
-    if (j.status === 'error') return fail(j.error);
-    setProgress(j.progress, j.message);
-    if (j.status === 'done') return show(id, j.result);
-    setTimeout(() => poll(id), 700);
-  } catch (e) { fail(e.message); }
-}
 
 function show(id, r) {
   $('go').disabled = false;

@@ -22,8 +22,17 @@ Os arquivos vão para `~/Downloads/Lummie Downloads` (mude com a variável de am
 
 1. Cole o link e clique em **Analisar**: aparece título, duração, miniatura e resoluções disponíveis.
 2. Escolha **Vídeo · MP4** (com limite de resolução) ou **Só o áudio** (MP3, WAV ou M4A).
-3. Marque **Baixar só um trecho** e arraste o slider ou digite início/fim (`1:30`, `00:01:30`, `90`).
-   O corte é exato no frame.
+3. Marque **Baixar só um trecho**. A ferramenta baixa uma prévia leve (até 480p) e abre um **mini player**
+   com linha do tempo de miniaturas, no estilo de um editor:
+   - arraste as **alças douradas** para escolher início e fim (funciona com o dedo no celular);
+   - clique ou arraste na linha do tempo para mover o ponto de reprodução;
+   - **Marcar início** e **Marcar fim** usam o ponto atual (teclas `I` e `O`);
+   - **Ver trecho** toca só o que você escolheu e **Repetir** fica em loop;
+   - setas andam quadro a quadro, `Shift` + seta anda 1 segundo, espaço toca e pausa;
+   - também dá para digitar início e fim (`1:30`, `00:01:30.5`, `90`).
+
+   A prévia serve só para escolher. O arquivo final é baixado na qualidade escolhida e o corte é exato no frame.
+   Selecionar o vídeo inteiro não corta nem re-codifica. As prévias ficam na pasta temporária e são apagadas depois de 24 horas.
 4. Marque **Transcrever o áudio** para gerar `.minutagem.txt` (cada fala com `[hh:mm:ss]`),
    `.txt` (só o texto), `.srt` (legenda) e `.json`. O texto aparece na tela com botão de copiar
    e um seletor "Com minutagem / Só o texto".
@@ -90,7 +99,7 @@ As plataformas mudam com frequência. Se algum link parar de funcionar, atualize
 
 ```
 tools/media-downloader/
-  lummie_dl/core.py        # análise, download, recorte (ffmpeg), transcrição
+  lummie_dl/core.py        # análise, download, prévia, recorte (ffmpeg), transcrição
   lummie_dl/cli.py         # comando lummie-dl
   lummie_dl/server.py      # comando lummie-dl-web (FastAPI)
   lummie_dl/static/index.html

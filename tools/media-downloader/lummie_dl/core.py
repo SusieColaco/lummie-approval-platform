@@ -7,12 +7,14 @@ Tudo aqui é independente da interface (CLI ou web).
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
 import shutil
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
@@ -285,6 +287,13 @@ def download(req: DownloadRequest, progress: Optional[ProgressCallback] = None) 
     output_dir = Path(req.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Início em 0 e fim no final do vídeo não são corte: evita re-codificar à toa.
+    start = req.start if req.start and req.start > 0.05 else None
+    end = req.end
+    if end is not None and info.duration and end >= info.duration - 0.05:
+        end = None
+    req.start, req.end = start, end
+
     wants_cut = req.start is not None or req.end is not None
     stem = _safe_stem(info.title)
     if wants_cut:
@@ -423,6 +432,192 @@ def _cut_media(
             f"O trecho ({format_timestamp(start or 0)[:8]} até "
             f"{format_timestamp(end)[:8] if end is not None else 'o fim'}) está fora da duração do vídeo."
         )
+
+
+# --------------------------------------------------------------------------- #
+# Prévia para o editor de trecho
+# --------------------------------------------------------------------------- #
+
+PREVIEW_DIR = Path(tempfile.gettempdir()) / "lummie_dl_previews"
+PREVIEW_MAX_HEIGHT = 480
+FILMSTRIP_HEIGHT = 64
+
+
+@dataclass
+class PreviewResult:
+    key: str
+    video_path: Path
+    filmstrip_path: Optional[Path]
+    duration: float
+    width: int
+    height: int
+    fps: float
+
+    def to_dict(self) -> dict:
+        return {
+            "key": self.key,
+            "duration": self.duration,
+            "width": self.width,
+            "height": self.height,
+            "fps": self.fps,
+            "video_url": f"/api/previews/{self.key}/video",
+            "filmstrip_url": f"/api/previews/{self.key}/filmstrip" if self.filmstrip_path else None,
+        }
+
+
+def preview_key(url: str) -> str:
+    return hashlib.sha1(url.encode("utf-8")).hexdigest()[:16]
+
+
+def cleanup_previews(max_age_hours: float = 24) -> None:
+    """Apaga prévias antigas da pasta temporária."""
+    if not PREVIEW_DIR.exists():
+        return
+    limit = time.time() - max_age_hours * 3600
+    for d in PREVIEW_DIR.iterdir():
+        try:
+            if d.is_dir() and d.stat().st_mtime < limit:
+                shutil.rmtree(d, ignore_errors=True)
+        except OSError:
+            pass
+
+
+def _ffprobe_streams(path: Path) -> dict:
+    ffprobe = shutil.which("ffprobe")
+    if not ffprobe:
+        raise DownloadError("ffprobe não encontrado. Ele vem junto com o ffmpeg.")
+    out = subprocess.run(
+        [ffprobe, "-v", "error", "-print_format", "json", "-show_format", "-show_streams", str(path)],
+        capture_output=True, text=True, check=True,
+    ).stdout
+    return json.loads(out)
+
+
+def _parse_fps(value: str | None) -> float:
+    try:
+        num, den = (value or "0/1").split("/")
+        fps = float(num) / float(den)
+        return fps if 1 <= fps <= 120 else 30.0
+    except (ValueError, ZeroDivisionError):
+        return 30.0
+
+
+def make_preview(
+    url: str,
+    cookies_browser: Optional[str] = None,
+    cookies_file: Optional[str] = None,
+    progress: Optional[ProgressCallback] = None,
+) -> PreviewResult:
+    """Baixa uma versão leve (até 480p, H.264/AAC) só para o player do editor, e gera a tira de miniaturas."""
+    notify = progress or (lambda stage, frac, msg: None)
+    _ffmpeg_path()
+
+    key = preview_key(url)
+    work = PREVIEW_DIR / key
+    meta_path = work / "meta.json"
+    video_path = work / "preview.mp4"
+    strip_path = work / "filmstrip.jpg"
+
+    if meta_path.exists() and video_path.exists():
+        meta = json.loads(meta_path.read_text())
+        os.utime(work)
+        return PreviewResult(key, video_path, strip_path if strip_path.exists() else None, **meta)
+
+    shutil.rmtree(work, ignore_errors=True)
+    work.mkdir(parents=True, exist_ok=True)
+
+    h = PREVIEW_MAX_HEIGHT
+    opts = _base_ydl_opts(cookies_browser, cookies_file)
+    opts["outtmpl"] = str(work / "source.%(ext)s")
+    opts["merge_output_format"] = "mp4"
+    opts["format"] = (
+        f"bestvideo[height<={h}][vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]"
+        f"/best[height<={h}][ext=mp4]"
+        f"/bestvideo[height<={h}]+bestaudio"
+        f"/best[height<={h}]/best"
+    )
+
+    def hook(d: dict) -> None:
+        if d.get("status") == "downloading":
+            total = d.get("total_bytes") or d.get("total_bytes_estimate")
+            frac = ((d.get("downloaded_bytes") or 0) / total) if total else -1
+            notify("preview", frac, "Baixando a prévia…")
+
+    opts["progress_hooks"] = [hook]
+    notify("preview", -1, "Baixando a prévia…")
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.download([url])
+    except yt_dlp.utils.DownloadError as exc:
+        shutil.rmtree(work, ignore_errors=True)
+        raise DownloadError(_friendly_error(str(exc))) from exc
+
+    sources = sorted(work.glob("source.*"), key=lambda p: p.stat().st_size, reverse=True)
+    if not sources:
+        shutil.rmtree(work, ignore_errors=True)
+        raise DownloadError("A prévia não foi gerada.")
+    source = sources[0]
+
+    notify("preview", -1, "Preparando a prévia…")
+    probe = _ffprobe_streams(source)
+    vstream = next((s for s in probe["streams"] if s.get("codec_type") == "video"), None)
+    astream = next((s for s in probe["streams"] if s.get("codec_type") == "audio"), None)
+    if not vstream:
+        shutil.rmtree(work, ignore_errors=True)
+        raise DownloadError("Esse link não tem vídeo para mostrar na prévia.")
+
+    compatible = (
+        vstream.get("codec_name") == "h264"
+        and vstream.get("pix_fmt", "yuv420p") == "yuv420p"
+        and int(vstream.get("height") or 0) <= h
+        and (astream is None or astream.get("codec_name") == "aac")
+    )
+    cmd = [_ffmpeg_path(), "-y", "-hide_banner", "-loglevel", "error", "-i", str(source)]
+    if compatible:
+        cmd += ["-c", "copy"]
+    else:
+        cmd += [
+            "-vf", f"scale=-2:'min({h},ih)'",
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "26", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "128k",
+        ]
+    cmd += ["-movflags", "+faststart", str(video_path)]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0 or not video_path.exists():
+        shutil.rmtree(work, ignore_errors=True)
+        raise DownloadError(f"Falha ao preparar a prévia: {proc.stderr.strip()[-600:]}")
+    source.unlink(missing_ok=True)
+
+    final = _ffprobe_streams(video_path)
+    v = next(s for s in final["streams"] if s.get("codec_type") == "video")
+    duration = float(final["format"].get("duration") or v.get("duration") or 0)
+    width, height = int(v.get("width") or 0), int(v.get("height") or 0)
+    fps = _parse_fps(v.get("avg_frame_rate") or v.get("r_frame_rate"))
+    if duration <= 0:
+        shutil.rmtree(work, ignore_errors=True)
+        raise DownloadError("Não consegui ler a duração do vídeo.")
+
+    notify("preview", -1, "Gerando as miniaturas da linha do tempo…")
+    made_strip = _build_filmstrip(video_path, strip_path, duration, width, height)
+
+    meta = {"duration": duration, "width": width, "height": height, "fps": fps}
+    meta_path.write_text(json.dumps(meta))
+    notify("preview", 1.0, "Prévia pronta.")
+    return PreviewResult(key, video_path, strip_path if made_strip else None, **meta)
+
+
+def _build_filmstrip(video: Path, dst: Path, duration: float, width: int, height: int) -> bool:
+    """Uma imagem só com N quadros lado a lado, para servir de fundo da linha do tempo."""
+    aspect = (width / height) if width and height else 16 / 9
+    tile_w = FILMSTRIP_HEIGHT * aspect
+    n = max(6, min(48, round(760 / tile_w)))
+    cmd = [
+        _ffmpeg_path(), "-y", "-hide_banner", "-loglevel", "error", "-i", str(video),
+        "-vf", f"fps={n}/{duration:.3f},scale=-2:{FILMSTRIP_HEIGHT},tile={n}x1",
+        "-frames:v", "1", "-q:v", "5", str(dst),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    return proc.returncode == 0 and dst.exists() and dst.stat().st_size > 0
 
 
 # --------------------------------------------------------------------------- #

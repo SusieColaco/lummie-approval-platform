@@ -21,8 +21,11 @@ from .core import (
     DEFAULT_OUTPUT_DIR,
     DownloadError,
     DownloadRequest,
+    PreviewResult,
+    cleanup_previews,
     download,
     fetch_info,
+    make_preview,
     parse_timestamp,
 )
 
@@ -32,6 +35,7 @@ app = FastAPI(title="LUMMIE Media Downloader", docs_url=None, redoc_url=None)
 _executor = ThreadPoolExecutor(max_workers=2)
 _jobs: dict[str, dict] = {}
 _jobs_lock = threading.Lock()
+_previews: dict[str, PreviewResult] = {}
 
 
 class InfoBody(BaseModel):
@@ -85,10 +89,7 @@ def api_create_job(body: JobBody) -> dict:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-    job_id = uuid.uuid4().hex[:12]
-    with _jobs_lock:
-        _jobs[job_id] = {"id": job_id, "status": "queued", "stage": "queued",
-                         "progress": -1, "message": "Na fila…", "result": None, "error": None}
+    job_id = _new_job()
 
     def progress(stage: str, frac: float, msg: str) -> None:
         with _jobs_lock:
@@ -107,6 +108,58 @@ def api_create_job(body: JobBody) -> dict:
 
     _executor.submit(run)
     return {"id": job_id}
+
+
+def _new_job() -> str:
+    job_id = uuid.uuid4().hex[:12]
+    with _jobs_lock:
+        _jobs[job_id] = {"id": job_id, "status": "queued", "stage": "queued",
+                         "progress": -1, "message": "Na fila…", "result": None, "error": None}
+    return job_id
+
+
+@app.post("/api/preview")
+def api_create_preview(body: InfoBody) -> dict:
+    url = body.url.strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="Informe o link do vídeo")
+    cookies = body.cookies_browser or None
+    job_id = _new_job()
+
+    def progress(stage: str, frac: float, msg: str) -> None:
+        with _jobs_lock:
+            _jobs[job_id].update(status="running", stage=stage, progress=frac, message=msg)
+
+    def run() -> None:
+        try:
+            result = make_preview(url, cookies_browser=cookies, progress=progress)
+            _previews[result.key] = result
+            with _jobs_lock:
+                _jobs[job_id].update(status="done", stage="done", progress=1.0,
+                                     message="Prévia pronta.", result=result.to_dict())
+        except Exception as exc:  # noqa: BLE001
+            with _jobs_lock:
+                _jobs[job_id].update(status="error", stage="error", progress=-1,
+                                     message=str(exc), error=str(exc))
+
+    _executor.submit(run)
+    return {"id": job_id}
+
+
+@app.get("/api/previews/{key}/video")
+def api_preview_video(key: str) -> FileResponse:
+    prev = _previews.get(key)
+    if not prev or not prev.video_path.exists():
+        raise HTTPException(status_code=404, detail="Prévia não encontrada")
+    return FileResponse(prev.video_path, media_type="video/mp4")
+
+
+@app.get("/api/previews/{key}/filmstrip")
+def api_preview_filmstrip(key: str) -> FileResponse:
+    prev = _previews.get(key)
+    if not prev or not prev.filmstrip_path or not prev.filmstrip_path.exists():
+        raise HTTPException(status_code=404, detail="Miniaturas não encontradas")
+    return FileResponse(prev.filmstrip_path, media_type="image/jpeg")
 
 
 @app.get("/api/jobs/{job_id}")
@@ -141,6 +194,7 @@ def main() -> None:
     import uvicorn
     import webbrowser
 
+    cleanup_previews()
     host, port = "127.0.0.1", 8765
     print(f"\n  LUMMIE Media Downloader\n  → http://{host}:{port}\n  Pasta de saída: {DEFAULT_OUTPUT_DIR}\n")
     threading.Timer(1.0, lambda: webbrowser.open(f"http://{host}:{port}")).start()
