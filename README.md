@@ -89,3 +89,9 @@ components/
 ---
 
 © 2026 LUMMIE Studio · Luz que revela
+
+## 🎬 Ferramenta: Media Downloader
+
+Em `tools/media-downloader/` há uma ferramenta local (Python) para baixar vídeos do Instagram,
+YouTube e TikTok em MP4, extrair só o áudio, baixar só um trecho e transcrever.
+Veja `tools/media-downloader/README.md`.

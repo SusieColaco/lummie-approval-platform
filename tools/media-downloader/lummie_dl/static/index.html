@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUMMIE · Downloader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #111010; --cream: #F4F0E7; --gold: #B69763; --graphite: #4E4B47;
+    --line: rgba(17,16,16,.12); --muted: #7a756f; --card: #fbf9f4; --danger: #a4452f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--cream); color: var(--black); font-family: "Instrument Sans", system-ui, sans-serif; }
+  body { padding: 0 16px 80px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { padding: 56px 0 32px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .brand { font-weight: 600; letter-spacing: .32em; font-size: 12px; text-transform: uppercase; }
+  .brand small { display: block; letter-spacing: .08em; text-transform: none; font-weight: 400; color: var(--muted); margin-top: 6px; font-size: 12px; }
+  h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(34px, 6vw, 52px); line-height: 1.05; margin: 0 0 28px; letter-spacing: -.01em; }
+  h1 em { font-style: italic; color: var(--gold); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-bottom: 16px; }
+  label.lbl { display: block; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--graphite); margin-bottom: 8px; }
+  input[type=text], input[type=url], select {
+    width: 100%; font: inherit; font-size: 15px; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: #fff; color: var(--black); outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--gold); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 999px; padding: 13px 22px; font-weight: 500; transition: transform .08s, opacity .15s; }
+  button:active { transform: scale(.985); }
+  button:disabled { opacity: .45; cursor: default; }
+  .btn-dark { background: var(--black); color: var(--cream); }
+  .btn-ghost { background: transparent; color: var(--black); border: 1px solid var(--line); }
+  .btn-gold { background: var(--gold); color: var(--black); width: 100%; font-size: 16px; padding: 16px; }
+  .preview { display: flex; gap: 18px; align-items: center; }
+  .preview img { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; background: #e8e2d6; flex: none; }
+  .preview .t { font-size: 17px; font-weight: 500; line-height: 1.3; }
+  .preview .m { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: #fff; }
+  .seg button { background: transparent; color: var(--graphite); padding: 9px 18px; font-size: 14px; }
+  .seg button.on { background: var(--black); color: var(--cream); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } .preview { flex-direction: column; align-items: flex-start; } }
+  .opt { margin-top: 22px; }
+  .check { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 15px; }
+  .check input { width: 18px; height: 18px; accent-color: var(--gold); }
+  .sub { margin: 14px 0 0 30px; display: none; }
+  .sub.open { display: block; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 8px; line-height: 1.5; }
+  /* slider duplo */
+  .range { position: relative; height: 34px; margin: 14px 0 4px; }
+  .range input[type=range] { position: absolute; left: 0; right: 0; top: 0; width: 100%; height: 34px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+  .range input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--black); border: 2px solid var(--cream); box-shadow: 0 0 0 1px var(--black); cursor: grab; }
+  .range input[type=range]::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--black); border: 2px solid var(--cream); cursor: grab; }
+  .range .track { position: absolute; left: 0; right: 0; top: 15px; height: 4px; background: #ddd6c8; border-radius: 2px; }
+  .range .fill { position: absolute; top: 15px; height: 4px; background: var(--gold); border-radius: 2px; }
+  .progress { height: 6px; background: #e4ded2; border-radius: 3px; overflow: hidden; margin: 14px 0 10px; }
+  .progress i { display: block; height: 100%; background: var(--gold); width: 0; transition: width .3s; }
+  .progress.indet i { width: 30%; animation: slide 1.2s infinite ease-in-out; }
+  @keyframes slide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+  .status { font-size: 14px; color: var(--graphite); }
+  .error { color: var(--danger); font-size: 14px; margin-top: 10px; white-space: pre-wrap; }
+  .result a.file { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--black); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: 14px; margin: 6px 6px 0 0; background: #fff; }
+  .result a.file:hover { border-color: var(--gold); }
+  pre.transcript { white-space: pre-wrap; font: 15px/1.6 "Instrument Sans", sans-serif; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; max-height: 360px; overflow: auto; margin: 14px 0 0; }
+  .path { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 10px; }
+  details summary { cursor: pointer; font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 40px; letter-spacing: .04em; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">LUMMIE<small>Downloader · ferramenta interna</small></div>
+  </header>
+
+  <h1>Baixe o vídeo, o áudio<br>ou <em>só o trecho que importa.</em></h1>
+
+  <!-- 1. Link -->
+  <section class="card">
+    <label class="lbl" for="url">Link do vídeo</label>
+    <div class="row">
+      <input id="url" type="url" placeholder="Cole aqui um link do Instagram, YouTube ou TikTok" autocomplete="off">
+      <button class="btn-dark" id="analyze" style="flex: none">Analisar</button>
+    </div>
+    <div class="error hidden" id="info-error"></div>
+  </section>
+
+  <!-- 2. Preview + opções -->
+  <section class="card hidden" id="options">
+    <div class="preview">
+      <img id="thumb" alt="">
+      <div>
+        <div class="t" id="title"></div>
+        <div class="m" id="meta"></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <label class="lbl">O que você quer</label>
+      <div class="seg" id="mode">
+        <button data-v="video" class="on">Vídeo · MP4</button>
+        <button data-v="audio">Só o áudio</button>
+      </div>
+    </div>
+
+    <div class="grid opt">
+      <div id="quality-wrap">
+        <label class="lbl" for="quality">Qualidade máxima</label>
+        <select id="quality"></select>
+        <div class="hint">O arquivo vem em MP4 (H.264) na maior resolução disponível até o limite escolhido.</div>
+      </div>
+      <div id="audio-wrap" class="hidden">
+        <label class="lbl" for="audio_format">Formato do áudio</label>
+        <select id="audio_format">
+          <option value="mp3">MP3 (320 kbps VBR)</option>
+          <option value="wav">WAV (sem compressão)</option>
+          <option value="m4a">M4A / AAC</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="opt">
+      <label class="check"><input type="checkbox" id="cut"> Baixar só um trecho</label>
+      <div class="sub" id="cut-sub">
+        <div class="range" id="range">
+          <div class="track"></div><div class="fill" id="fill"></div>
+          <input type="range" id="r-start" min="0" max="100" step="0.1" value="0">
+          <input type="range" id="r-end" min="0" max="100" step="0.1" value="100">
+        </div>
+        <div class="row">
+          <div><label class="lbl" for="start">Início</label><input type="text" id="start" placeholder="00:00:00"></div>
+          <div><label class="lbl" for="end">Fim</label><input type="text" id="end" placeholder="00:00:00"></div>
+        </div>
+        <div class="hint">O corte é exato no frame. Só o trecho é processado, então é rápido mesmo em vídeos longos.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <label class="check"><input type="checkbox" id="transcribe"> Transcrever o áudio</label>
+      <div class="sub" id="tr-sub">
+        <div class="grid">
+          <div>
+            <label class="lbl" for="language">Idioma</label>
+            <select id="language">
+              <option value="">Detectar automaticamente</option>
+              <option value="pt">Português</option>
+              <option value="en">Inglês</option>
+              <option value="es">Espanhol</option>
+              <option value="fr">Francês</option>
+              <option value="it">Italiano</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl" for="model">Precisão</label>
+            <select id="model">
+              <option value="base">Rápida (base)</option>
+              <option value="small" selected>Equilibrada (small)</option>
+              <option value="medium">Alta (medium)</option>
+              <option value="large-v3">Máxima (large-v3, lento)</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint">Gera .txt (texto corrido), .srt (legenda com tempos) e .json. Na primeira vez o modelo é baixado.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <details>
+        <summary>Avançado · cookies do navegador (Instagram e conteúdo com login)</summary>
+        <div style="margin-top: 12px">
+          <select id="cookies">
+            <option value="">Não usar cookies</option>
+            <option value="chrome">Chrome</option>
+            <option value="firefox">Firefox</option>
+            <option value="safari">Safari</option>
+            <option value="edge">Edge</option>
+            <option value="brave">Brave</option>
+          </select>
+          <div class="hint">Use quando a plataforma pedir login. Feche o navegador escolhido antes, senão ele pode travar o acesso aos cookies.</div>
+        </div>
+      </details>
+    </div>
+
+    <div class="opt">
+      <button class="btn-gold" id="go">Baixar</button>
+    </div>
+  </section>
+
+  <!-- 3. Progresso -->
+  <section class="card hidden" id="progress-card">
+    <label class="lbl">Andamento</label>
+    <div class="progress" id="progress"><i id="bar"></i></div>
+    <div class="status" id="status">…</div>
+    <div class="error hidden" id="job-error"></div>
+  </section>
+
+  <!-- 4. Resultado -->
+  <section class="card result hidden" id="result">
+    <label class="lbl">Pronto</label>
+    <div id="files"></div>
+    <div class="path" id="out-path"></div>
+    <div id="tr-block" class="hidden">
+      <div class="row" style="margin-top: 22px; align-items: center">
+        <label class="lbl" style="margin: 0">Transcrição <span id="tr-lang" style="color: var(--muted)"></span></label>
+        <button class="btn-ghost" id="copy" style="flex: none; padding: 8px 14px; font-size: 13px">Copiar texto</button>
+      </div>
+      <pre class="transcript" id="transcript"></pre>
+    </div>
+  </section>
+
+  <footer>Os arquivos ficam na pasta <span id="cfg-out">…</span>. Respeite os direitos de quem publicou o conteúdo.</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let info = null;
+
+const fmt = (s) => { s = Math.max(0, s || 0); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = Math.floor(s%60);
+  return [h, m, sec].map(v => String(v).padStart(2, '0')).join(':'); };
+const parse = (t) => { t = (t||'').trim(); if (!t) return null; if (/^\d+(\.\d+)?$/.test(t)) return +t;
+  const p = t.split(':').map(Number); if (p.some(isNaN)) return null; while (p.length < 3) p.unshift(0); return p[0]*3600 + p[1]*60 + p[2]; };
+
+fetch('/api/config').then(r => r.json()).then(c => $('cfg-out').textContent = c.output_dir).catch(() => {});
+
+async function post(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.detail || `Erro ${r.status}`);
+  return data;
+}
+
+// ---- Analisar
+$('analyze').onclick = analyze;
+$('url').addEventListener('keydown', e => { if (e.key === 'Enter') analyze(); });
+async function analyze() {
+  const url = $('url').value.trim();
+  if (!url) return;
+  $('info-error').classList.add('hidden'); $('options').classList.add('hidden');
+  $('result').classList.add('hidden'); $('progress-card').classList.add('hidden');
+  $('analyze').disabled = true; $('analyze').textContent = 'Analisando…';
+  try {
+    info = await post('/api/info', { url, cookies_browser: $('cookies').value || null });
+    $('thumb').src = info.thumbnail || ''; $('thumb').classList.toggle('hidden', !info.thumbnail);
+    $('title').textContent = info.title;
+    $('meta').textContent = [info.platform, info.uploader, info.duration_label].filter(Boolean).join(' · ');
+    const q = $('quality'); q.innerHTML = '<option value="best">Melhor disponível' + (info.heights[0] ? ` (${info.heights[0]}p)` : '') + '</option>';
+    [2160, 1440, 1080, 720, 480].filter(h => !info.heights.length || info.heights.some(x => x >= h) || h <= 1080)
+      .forEach(h => q.insertAdjacentHTML('beforeend', `<option value="${h}">até ${h}p</option>`));
+    setupRange(info.duration);
+    $('options').classList.remove('hidden');
+  } catch (e) {
+    $('info-error').textContent = e.message; $('info-error').classList.remove('hidden');
+  } finally { $('analyze').disabled = false; $('analyze').textContent = 'Analisar'; }
+}
+
+// ---- Vídeo / áudio
+$('mode').querySelectorAll('button').forEach(b => b.onclick = () => {
+  $('mode').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on');
+  const audio = b.dataset.v === 'audio';
+  $('quality-wrap').classList.toggle('hidden', audio); $('audio-wrap').classList.toggle('hidden', !audio);
+});
+const mode = () => $('mode').querySelector('.on').dataset.v;
+
+// ---- Trecho
+$('cut').onchange = () => $('cut-sub').classList.toggle('open', $('cut').checked);
+$('transcribe').onchange = () => $('tr-sub').classList.toggle('open', $('transcribe').checked);
+
+function setupRange(duration) {
+  const has = !!duration; $('range').style.display = has ? '' : 'none';
+  if (!has) { $('start').value = ''; $('end').value = ''; return; }
+  const rs = $('r-start'), re = $('r-end');
+  rs.max = re.max = duration; rs.value = 0; re.value = duration;
+  $('start').value = fmt(0); $('end').value = fmt(duration);
+  const paint = () => { const a = +rs.value, b = +re.value; $('fill').style.left = (a/duration*100) + '%'; $('fill').style.width = ((b-a)/duration*100) + '%'; };
+  rs.oninput = () => { if (+rs.value >= +re.value) rs.value = Math.max(0, +re.value - 1); $('start').value = fmt(+rs.value); paint(); };
+  re.oninput = () => { if (+re.value <= +rs.value) re.value = Math.min(duration, +rs.value + 1); $('end').value = fmt(+re.value); paint(); };
+  $('start').onchange = () => { const v = parse($('start').value); if (v !== null) { rs.value = Math.min(v, duration); $('start').value = fmt(+rs.value); paint(); } };
+  $('end').onchange = () => { const v = parse($('end').value); if (v !== null) { re.value = Math.min(v, duration); $('end').value = fmt(+re.value); paint(); } };
+  paint();
+}
+
+// ---- Baixar
+$('go').onclick = async () => {
+  const body = {
+    url: $('url').value.trim(), mode: mode(), quality: $('quality').value, audio_format: $('audio_format').value,
+    start: $('cut').checked ? $('start').value : null, end: $('cut').checked ? $('end').value : null,
+    transcribe: $('transcribe').checked,
+    language: $('language').value || null, whisper_model: $('model').value, cookies_browser: $('cookies').value || null,
+  };
+  if (body.start !== null && body.end && info?.duration && parse(body.end) >= info.duration) body.end = null; // "até o fim"
+  $('go').disabled = true; $('result').classList.add('hidden'); $('job-error').classList.add('hidden');
+  $('progress-card').classList.remove('hidden'); setProgress(-1, 'Enviando…');
+  try {
+    const { id } = await post('/api/jobs', body);
+    poll(id);
+  } catch (e) { fail(e.message); }
+};
+
+function setProgress(frac, msg) {
+  $('progress').classList.toggle('indet', frac < 0);
+  $('bar').style.width = frac >= 0 ? (frac * 100) + '%' : '';
+  $('status').textContent = msg;
+}
+function fail(msg) { $('job-error').textContent = msg; $('job-error').classList.remove('hidden'); setProgress(0, 'Falhou.'); $('go').disabled = false; }
+
+async function poll(id) {
+  try {
+    const j = await (await fetch(`/api/jobs/${id}`)).json();
+    if (j.status === 'error') return fail(j.error);
+    setProgress(j.progress, j.message);
+    if (j.status === 'done') return show(id, j.result);
+    setTimeout(() => poll(id), 700);
+  } catch (e) { fail(e.message); }
+}
+
+function show(id, r) {
+  $('go').disabled = false;
+  const links = [`<a class="file" href="/api/jobs/${id}/file/media" download>⬇ ${r.media_name}</a>`];
+  if (r.transcript_txt) links.push(`<a class="file" href="/api/jobs/${id}/file/txt" download>.txt</a>`, `<a class="file" href="/api/jobs/${id}/file/srt" download>.srt</a>`, `<a class="file" href="/api/jobs/${id}/file/json" download>.json</a>`);
+  $('files').innerHTML = links.join('');
+  $('out-path').textContent = 'Salvo em: ' + r.media_path;
+  $('tr-block').classList.toggle('hidden', !r.transcript_text);
+  if (r.transcript_text) { $('transcript').textContent = r.transcript_text; $('tr-lang').textContent = r.transcript_language ? `· ${r.transcript_language}` : ''; }
+  $('result').classList.remove('hidden'); $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText($('transcript').textContent); $('copy').textContent = 'Copiado ✓'; setTimeout(() => $('copy').textContent = 'Copiar texto', 1500); } catch {} };
+</script>
+</body>
+</html>
