@@ -38,6 +38,44 @@ Os arquivos vão para `~/Downloads/Lummie Downloads` (mude com a variável de am
    e um seletor "Com minutagem / Só o texto".
 5. **Baixar**. A barra mostra o andamento e no fim aparecem os links dos arquivos.
 
+## Usar no celular
+
+Dá para usar a ferramenta pelo navegador do celular, na mesma rede Wi-Fi do computador. O computador faz todo o
+trabalho (download, corte, transcrição) e o celular só controla e recebe o arquivo.
+
+1. Abra no **modo celular**: Mac, dois cliques em `start-celular.command`; Windows, dois cliques em
+   `start-celular.bat`; terminal, `./start.sh --lan`. A janela mostra um **QR code** e o endereço.
+   Na primeira vez, o Mac ou o Windows pergunta sobre rede/firewall: permita.
+2. No celular, escaneie o QR code com a câmera. No Safari, use Compartilhar → **Adicionar à Tela de Início**
+   para ter o ícone da ferramenta.
+3. Cole o link, escolha o trecho no player (com o dedo) e baixe. No resultado, **Baixar** salva o arquivo
+   e **Abrir** toca o vídeo, onde você usa o botão de compartilhar para **Salvar vídeo** no Rolo da Câmera.
+   O arquivo também fica salvo na pasta do computador.
+
+### Atalho de compartilhar do iPhone
+
+Para mandar um Reel direto do Instagram (ou TikTok, YouTube) para a ferramenta, sem copiar o link, crie um
+Atalho. O passo a passo, com o endereço certo do seu computador, está na ferramenta: no rodapé da página,
+**Usar no celular**. Resumo:
+
+1. App **Atalhos**, atalho novo "Baixar no Lummie", com **Mostrar na Folha de Compartilhamento** ligado
+   (tipos URLs e Texto).
+2. Ações, nesta ordem: **Codificar URL** (entrada: Entrada de Atalho), **Texto** (o endereço do atalho mais a
+   variável do passo anterior no final) e **Abrir URLs** (o Texto).
+3. No app do Instagram: Compartilhar → Mais → **Baixar no Lummie**. A ferramenta abre já com o vídeo analisado.
+
+Não dá para entregar o Atalho pronto em arquivo porque o iOS só importa atalhos assinados pela Apple.
+
+### Segurança e cuidados
+
+- No modo celular, quem está na mesma rede só entra com a **chave** (vai no QR code e no endereço). O próprio
+  computador não precisa de chave. Sem `--lan`, a ferramenta só aceita o próprio computador.
+- A chave fica em `~/.lummie-dl/key` e não muda entre execuções. Para trocar, apague o arquivo e reinicie.
+- A conexão é HTTP, sem criptografia. Use em rede de casa ou do estúdio, não em Wi-Fi público.
+- O computador precisa ficar ligado e sem suspender. No Mac, o `start.sh` já impede a suspensão.
+- Se o IP do computador mudar, o QR code muda. O endereço com `.local` (por exemplo `meu-mac.local`) continua valendo.
+- Android: escaneie o QR code e use o menu do Chrome → Adicionar à tela inicial. O atalho de compartilhar é só iPhone.
+
 ## Linha de comando
 
 ```bash
@@ -103,7 +141,9 @@ tools/media-downloader/
   lummie_dl/cli.py         # comando lummie-dl
   lummie_dl/server.py      # comando lummie-dl-web (FastAPI)
   lummie_dl/static/index.html
+  lummie_dl/static/icon.png  # ícone da tela inicial do celular
   start.sh / start.bat     # instala e abre a interface
+  start-celular.command / .bat  # idem, no modo celular
 ```
 
 Uso responsável: baixe apenas conteúdo seu, de clientes ou com autorização de quem publicou.

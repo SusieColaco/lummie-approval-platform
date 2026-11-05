@@ -12,6 +12,7 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn>=0.27",
     "pydantic>=2",
+    "segno>=1.6",
 ]
 
 [project.optional-dependencies]
@@ -25,4 +26,4 @@ lummie-dl-web = "lummie_dl.server:main"
 include = ["lummie_dl*"]
 
 [tool.setuptools.package-data]
-lummie_dl = ["static/*.html"]
+lummie_dl = ["static/*.html", "static/*.png"]

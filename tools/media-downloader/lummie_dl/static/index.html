@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LUMMIE · Downloader</title>
+<meta name="theme-color" content="#F4F0E7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lummie">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
@@ -97,6 +103,16 @@
   .path { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 10px; }
   details summary { cursor: pointer; font-size: 13px; color: var(--muted); letter-spacing: .04em; }
   footer { color: var(--muted); font-size: 12px; margin-top: 40px; letter-spacing: .04em; }
+  footer a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+  .phone { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+  .phone .qr { flex: none; width: 170px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #fff; line-height: 0; }
+  .phone .qr svg { width: 100%; height: auto; display: block; }
+  .phone .txt { flex: 1; min-width: 240px; font-size: 14px; line-height: 1.55; }
+  #phone-body .txt { font-size: 14px; line-height: 1.55; }
+  .phone ol { margin: 10px 0 0; padding-left: 20px; }
+  .phone li { margin-bottom: 6px; }
+  code.addr { display: block; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: 12px/1.45 ui-monospace, Menlo, monospace; word-break: break-all; margin: 6px 0; user-select: all; }
+  .small { font-size: 12px; color: var(--muted); }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -270,11 +286,19 @@
     </div>
   </section>
 
-  <footer>Os arquivos ficam na pasta <span id="cfg-out">…</span>. Respeite os direitos de quem publicou o conteúdo.</footer>
+  <!-- 5. Usar no celular -->
+  <section class="card hidden" id="phone-card">
+    <label class="lbl">Usar no celular</label>
+    <div id="phone-body"></div>
+  </section>
+
+  <footer>Os arquivos ficam na pasta <span id="cfg-out">…</span>. Respeite os direitos de quem publicou o conteúdo. · <a href="#" id="open-phone">Usar no celular</a></footer>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
+// aceita o link puro ou um texto com o link no meio ("Veja esse reel https://...")
+const getUrl = () => { const v = $('url').value.trim(); const m = v.match(/https?:\/\/[^\s]+/); return m ? m[0] : v; };
 let info = null;
 
 const fmt = (s) => { s = Math.max(0, s || 0); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = Math.floor(s%60);
@@ -295,7 +319,7 @@ async function post(path, body) {
 $('analyze').onclick = analyze;
 $('url').addEventListener('keydown', e => { if (e.key === 'Enter') analyze(); });
 async function analyze() {
-  const url = $('url').value.trim();
+  const url = getUrl();
   if (!url) return;
   $('info-error').classList.add('hidden'); $('options').classList.add('hidden');
   $('result').classList.add('hidden'); $('progress-card').classList.add('hidden');
@@ -364,7 +388,7 @@ async function startPreview() {
   $('prep').classList.remove('hidden'); $('prep-progress').classList.remove('hidden'); $('prep-error').classList.add('hidden');
   setPrep(-1, 'Preparando a prévia. Ela é leve e só serve para você escolher o trecho.');
   try {
-    const { id } = await post('/api/preview', { url: $('url').value.trim(), cookies_browser: $('cookies').value || null });
+    const { id } = await post('/api/preview', { url: getUrl(), cookies_browser: $('cookies').value || null });
     pollJob(id,
       (j) => { if (token === previewToken) setPrep(j.progress, j.message); },
       (r) => { if (token === previewToken) prepReady(r); },
@@ -511,7 +535,7 @@ async function pollJob(id, onProgress, onDone, onError) {
 // ---- Baixar
 $('go').onclick = async () => {
   const body = {
-    url: $('url').value.trim(), mode: mode(), quality: $('quality').value, audio_format: $('audio_format').value,
+    url: getUrl(), mode: mode(), quality: $('quality').value, audio_format: $('audio_format').value,
     start: cutForDownload().start, end: cutForDownload().end,
     transcribe: $('transcribe').checked,
     language: $('language').value || null, whisper_model: $('model').value, cookies_browser: $('cookies').value || null,
@@ -533,7 +557,8 @@ function fail(msg) { $('job-error').textContent = msg; $('job-error').classList.
 
 function show(id, r) {
   $('go').disabled = false;
-  const links = [`<a class="file" href="/api/jobs/${id}/file/media" download>⬇ ${r.media_name}</a>`];
+  const links = [`<a class="file" href="/api/jobs/${id}/file/media" download>⬇ ${r.media_name}</a>`,
+    `<a class="file" href="/api/jobs/${id}/file/media?inline=1" target="_blank" rel="noopener">▶ Abrir</a>`];
   if (r.transcript_txt) links.push(`<a class="file" href="/api/jobs/${id}/file/timed" download>.txt com minutagem</a>`, `<a class="file" href="/api/jobs/${id}/file/txt" download>.txt só texto</a>`, `<a class="file" href="/api/jobs/${id}/file/srt" download>.srt</a>`, `<a class="file" href="/api/jobs/${id}/file/json" download>.json</a>`);
   $('files').innerHTML = links.join('');
   $('out-path').textContent = 'Salvo em: ' + r.media_path;
@@ -547,7 +572,65 @@ const renderTranscript = () => { $('transcript').textContent = transcripts[trVie
 $('tr-view').querySelectorAll('button').forEach(b => b.onclick = () => {
   $('tr-view').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); renderTranscript();
 });
+// ---- Usar no celular
+const copyText = async (text, btn) => {
+  try { await navigator.clipboard.writeText(text); } catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  const old = btn.textContent; btn.textContent = 'Copiado ✓'; setTimeout(() => btn.textContent = old, 1500);
+};
+$('open-phone').onclick = async (e) => {
+  e.preventDefault();
+  const card = $('phone-card');
+  if (!card.classList.contains('hidden')) return card.classList.add('hidden');
+  const body = $('phone-body');
+  try {
+    const r = await (await fetch('/api/phone')).json();
+    if (!r.lan) {
+      body.innerHTML = '<div class="txt">Para usar no celular, abra a ferramenta no <b>modo celular</b>: no Mac, dois cliques em <b>start-celular.command</b>; no Windows, dois cliques em <b>start-celular.bat</b>. O computador e o celular precisam estar na mesma rede Wi-Fi.</div>';
+    } else {
+      const base = (r.local_url || r.ip_url) + '&url=';
+      body.innerHTML = `
+        <div class="phone">
+          <div class="qr" id="ph-qr"></div>
+          <div class="txt">
+            <div><b>1. Abrir no celular.</b> Escaneie o QR code com a câmera (mesmo Wi-Fi do computador). Depois, no Safari, use Compartilhar → <b>Adicionar à Tela de Início</b> para ter o ícone.</div>
+            <div class="small" style="margin-top: 6px">Se o QR code não abrir, digite o endereço:</div>
+            <code class="addr" id="ph-ip"></code>
+          </div>
+        </div>
+        <div class="txt" style="margin-top: 20px">
+          <div><b>2. Atalho de compartilhar (iPhone).</b> Assim você manda um Reel direto do Instagram para a ferramenta, sem copiar o link:</div>
+          <ol>
+            <li>No app <b>Atalhos</b>, crie um atalho novo chamado "Baixar no Lummie".</li>
+            <li>Em Detalhes, ative <b>Mostrar na Folha de Compartilhamento</b> e deixe só <b>URLs</b> e <b>Texto</b> marcados.</li>
+            <li>Adicione a ação <b>Codificar URL</b> e, no campo, escolha <b>Entrada de Atalho</b>.</li>
+            <li>Adicione a ação <b>Texto</b>, cole o endereço abaixo e, no final dele, toque na variável <b>Texto Codificado em URL</b>.</li>
+            <li>Adicione a ação <b>Abrir URLs</b> e escolha o <b>Texto</b>.</li>
+          </ol>
+          <code class="addr" id="ph-short"></code>
+          <button class="btn-ghost" id="ph-copy" style="padding: 8px 14px; font-size: 13px">Copiar endereço do atalho</button>
+          <div class="small" style="margin-top: 10px">Pronto: no Instagram, TikTok ou YouTube, toque em Compartilhar → Mais → "Baixar no Lummie". O link abre aqui já analisado.${r.local_url ? ' O endereço com .local continua valendo se o IP do computador mudar.' : ''}</div>
+        </div>`;
+      $('ph-qr').innerHTML = r.qr_svg || '';
+      $('ph-ip').textContent = r.ip_url || r.local_url;
+      $('ph-short').textContent = base;
+      $('ph-copy').onclick = (ev) => copyText(base, ev.currentTarget);
+    }
+  } catch (err) { body.textContent = 'Não consegui carregar: ' + err.message; }
+  card.classList.remove('hidden'); card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
 $('copy').onclick = async () => { try { await navigator.clipboard.writeText($('transcript').textContent); $('copy').textContent = 'Copiado ✓'; setTimeout(() => $('copy').textContent = 'Copiar', 1500); } catch {} };
+// ---- Link compartilhado (?url=...): abre já analisado
+(() => {
+  const params = new URLSearchParams(location.search), shared = params.get('url');
+  if (!shared) return;
+  $('url').value = shared;
+  params.delete('url');
+  const rest = params.toString();
+  history.replaceState(null, '', location.pathname + (rest ? '?' + rest : ''));
+  analyze();
+})();
+
 </script>
 </body>
 </html>

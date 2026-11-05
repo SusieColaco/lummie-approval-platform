@@ -1,9 +1,10 @@
 @echo off
 REM Instala (na primeira vez) e abre a interface web do LUMMIE Media Downloader.
+REM Use "start.bat --lan" (ou start-celular.bat) para o modo celular.
 cd /d "%~dp0"
 where ffmpeg >nul 2>nul || (echo ffmpeg nao encontrado. Instale com: winget install Gyan.FFmpeg & pause & exit /b 1)
 if not exist .venv ( python -m venv .venv )
 call .venv\Scripts\activate.bat
 pip install -q -e ".[transcribe]"
-lummie-dl-web
+lummie-dl-web %*
 pause
