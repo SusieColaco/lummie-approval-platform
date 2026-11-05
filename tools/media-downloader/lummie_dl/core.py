@@ -410,6 +410,12 @@ def _cut_media(
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0 or not dst.exists():
         raise DownloadError(f"Falha ao recortar o trecho com ffmpeg: {proc.stderr.strip()[-800:]}")
+    cut_duration = _ffprobe_duration(dst)
+    if cut_duration is None or cut_duration < 0.05:
+        raise ValueError(
+            f"O trecho ({format_timestamp(start or 0)[:8]} até "
+            f"{format_timestamp(end)[:8] if end is not None else 'o fim'}) está fora da duração do vídeo."
+        )
 
 
 # --------------------------------------------------------------------------- #
