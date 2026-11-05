@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lummie-dl"
+version = "0.1.0"
+description = "LUMMIE Media Downloader: baixa vídeo/áudio do Instagram, YouTube e TikTok, recorta trechos e transcreve."
+requires-python = ">=3.10"
+dependencies = [
+    "yt-dlp>=2025.1.1",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "pydantic>=2",
+    "segno>=1.6",
+]
+
+[project.optional-dependencies]
+transcribe = ["faster-whisper>=1.0"]
+
+[project.scripts]
+lummie-dl = "lummie_dl.cli:main"
+lummie-dl-web = "lummie_dl.server:main"
+
+[tool.setuptools.packages.find]
+include = ["lummie_dl*"]
+
+[tool.setuptools.package-data]
+lummie_dl = ["static/*.html", "static/*.png"]

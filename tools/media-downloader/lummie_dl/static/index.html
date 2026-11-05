@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LUMMIE · Downloader</title>
+<meta name="theme-color" content="#F4F0E7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lummie">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #111010; --cream: #F4F0E7; --gold: #B69763; --graphite: #4E4B47;
+    --line: rgba(17,16,16,.12); --muted: #7a756f; --card: #fbf9f4; --danger: #a4452f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--cream); color: var(--black); font-family: "Instrument Sans", system-ui, sans-serif; }
+  body { padding: 0 16px 80px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header { padding: 56px 0 32px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .brand { font-weight: 600; letter-spacing: .32em; font-size: 12px; text-transform: uppercase; }
+  .brand small { display: block; letter-spacing: .08em; text-transform: none; font-weight: 400; color: var(--muted); margin-top: 6px; font-size: 12px; }
+  h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; font-size: clamp(34px, 6vw, 52px); line-height: 1.05; margin: 0 0 28px; letter-spacing: -.01em; }
+  h1 em { font-style: italic; color: var(--gold); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; margin-bottom: 16px; }
+  label.lbl { display: block; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--graphite); margin-bottom: 8px; }
+  input[type=text], input[type=url], select {
+    width: 100%; font: inherit; font-size: 15px; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: #fff; color: var(--black); outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--gold); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 999px; padding: 13px 22px; font-weight: 500; transition: transform .08s, opacity .15s; }
+  button:active { transform: scale(.985); }
+  button:disabled { opacity: .45; cursor: default; }
+  .btn-dark { background: var(--black); color: var(--cream); }
+  .btn-ghost { background: transparent; color: var(--black); border: 1px solid var(--line); }
+  .btn-gold { background: var(--gold); color: var(--black); width: 100%; font-size: 16px; padding: 16px; }
+  .preview { display: flex; gap: 18px; align-items: center; }
+  .preview img { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; background: #e8e2d6; flex: none; }
+  .preview .t { font-size: 17px; font-weight: 500; line-height: 1.3; }
+  .preview .m { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: #fff; }
+  .seg button { background: transparent; color: var(--graphite); padding: 9px 18px; font-size: 14px; }
+  .seg button.on { background: var(--black); color: var(--cream); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } .preview { flex-direction: column; align-items: flex-start; } }
+  .opt { margin-top: 22px; }
+  .check { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 15px; }
+  .check input { width: 18px; height: 18px; accent-color: var(--gold); }
+  .sub { margin: 14px 0 0 30px; display: none; }
+  .sub.open { display: block; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 8px; line-height: 1.5; }
+  /* editor de trecho (mini player) */
+  .player { display: flex; justify-content: center; background: #0c0b0b; border-radius: 14px; overflow: hidden; cursor: pointer; }
+  .player video { display: block; max-width: 100%; max-height: min(52vh, 460px); }
+  .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; }
+  .transport .spacer { flex: 1; }
+  .pbtn { width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--black); color: var(--cream); display: grid; place-items: center; flex: none; }
+  .pbtn svg { width: 16px; height: 16px; fill: currentColor; }
+  .clock { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--graphite); white-space: nowrap; }
+  .clock b { color: var(--black); font-weight: 600; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: #fff; color: var(--black); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .chip:hover { border-color: var(--gold); }
+  .chip.toggle { position: relative; }
+  .chip.toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .chip.toggle:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .chip.toggle:has(input:checked) { background: var(--black); color: var(--cream); border-color: var(--black); }
+  .timeline { position: relative; height: 64px; margin: 28px 14px 12px; user-select: none; -webkit-user-select: none; touch-action: none; cursor: pointer; }
+  .strip { position: absolute; inset: 0; border-radius: 8px; background: #ddd6c8 center / 100% 100% no-repeat; }
+  .dim { position: absolute; top: 0; bottom: 0; background: rgba(17,16,16,.62); pointer-events: none; }
+  .dim-l { left: 0; border-radius: 8px 0 0 8px; }
+  .dim-r { right: 0; border-radius: 0 8px 8px 0; }
+  .sel { position: absolute; top: -3px; bottom: -3px; border: 3px solid var(--gold); border-left: 0; border-right: 0; pointer-events: none; }
+  .handle { position: absolute; top: -3px; bottom: -3px; width: 16px; margin-left: -8px; background: var(--gold); border-radius: 6px; cursor: ew-resize; touch-action: none; display: grid; place-items: center; z-index: 3; }
+  .handle::before { content: ""; width: 2px; height: 22px; background: var(--black); border-radius: 1px; opacity: .55; }
+  .handle::after { content: ""; position: absolute; top: 0; bottom: 0; left: -12px; right: -12px; }
+  .playhead { position: absolute; top: -10px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--black); z-index: 4; pointer-events: none; box-shadow: 0 0 0 1px rgba(244,240,231,.85); }
+  .playhead::before { content: ""; position: absolute; top: 0; left: -5px; border: 6px solid transparent; border-top-color: var(--black); border-bottom: 0; }
+  .dur { padding: 13px 0; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .times { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) {
+    #cut-sub.sub { margin-left: 0; }
+    .times { grid-template-columns: 1fr 1fr; }
+    .times > :last-child { grid-column: 1 / -1; }
+    .times .dur { padding: 0; }
+    .player video { max-height: min(40vh, 420px); }
+  }
+  .progress { height: 6px; background: #e4ded2; border-radius: 3px; overflow: hidden; margin: 14px 0 10px; }
+  .progress i { display: block; height: 100%; background: var(--gold); width: 0; transition: width .3s; }
+  .progress.indet i { width: 30%; animation: slide 1.2s infinite ease-in-out; }
+  @keyframes slide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+  .status { font-size: 14px; color: var(--graphite); }
+  .error { color: var(--danger); font-size: 14px; margin-top: 10px; white-space: pre-wrap; }
+  .result a.file { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--black); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; font-size: 14px; margin: 6px 6px 0 0; background: #fff; }
+  .result a.file:hover { border-color: var(--gold); }
+  pre.transcript { white-space: pre-wrap; font: 15px/1.6 "Instrument Sans", sans-serif; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; max-height: 360px; overflow: auto; margin: 14px 0 0; }
+  .path { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 10px; }
+  details summary { cursor: pointer; font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 40px; letter-spacing: .04em; }
+  footer a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+  .phone { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+  .phone .qr { flex: none; width: 170px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #fff; line-height: 0; }
+  .phone .qr svg { width: 100%; height: auto; display: block; }
+  .phone .txt { flex: 1; min-width: 240px; font-size: 14px; line-height: 1.55; }
+  #phone-body .txt { font-size: 14px; line-height: 1.55; }
+  .phone ol { margin: 10px 0 0; padding-left: 20px; }
+  .phone li { margin-bottom: 6px; }
+  code.addr { display: block; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: 12px/1.45 ui-monospace, Menlo, monospace; word-break: break-all; margin: 6px 0; user-select: all; }
+  .small { font-size: 12px; color: var(--muted); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">LUMMIE<small>Downloader · ferramenta interna</small></div>
+  </header>
+
+  <h1>Baixe o vídeo, o áudio<br>ou <em>só o trecho que importa.</em></h1>
+
+  <!-- 1. Link -->
+  <section class="card">
+    <label class="lbl" for="url">Link do vídeo</label>
+    <div class="row">
+      <input id="url" type="url" placeholder="Cole aqui um link do Instagram, YouTube ou TikTok" autocomplete="off">
+      <button class="btn-dark" id="analyze" style="flex: none">Analisar</button>
+    </div>
+    <div class="error hidden" id="info-error"></div>
+  </section>
+
+  <!-- 2. Preview + opções -->
+  <section class="card hidden" id="options">
+    <div class="preview">
+      <img id="thumb" alt="">
+      <div>
+        <div class="t" id="title"></div>
+        <div class="m" id="meta"></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <label class="lbl">O que você quer</label>
+      <div class="seg" id="mode">
+        <button data-v="video" class="on">Vídeo · MP4</button>
+        <button data-v="audio">Só o áudio</button>
+      </div>
+    </div>
+
+    <div class="grid opt">
+      <div id="quality-wrap">
+        <label class="lbl" for="quality">Qualidade máxima</label>
+        <select id="quality"></select>
+        <div class="hint">O arquivo vem em MP4 (H.264) na maior resolução disponível até o limite escolhido.</div>
+      </div>
+      <div id="audio-wrap" class="hidden">
+        <label class="lbl" for="audio_format">Formato do áudio</label>
+        <select id="audio_format">
+          <option value="mp3">MP3 (320 kbps VBR)</option>
+          <option value="wav">WAV (sem compressão)</option>
+          <option value="m4a">M4A / AAC</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="opt">
+      <label class="check"><input type="checkbox" id="cut"> Baixar só um trecho</label>
+      <div class="sub" id="cut-sub">
+        <div class="prep" id="prep">
+          <div class="progress indet" id="prep-progress"><i id="prep-bar"></i></div>
+          <div class="status" id="prep-status">Preparando a prévia…</div>
+          <div class="error hidden" id="prep-error"></div>
+        </div>
+        <div class="stage hidden" id="stage">
+          <div class="player" id="player"><video id="video" playsinline preload="auto"></video></div>
+          <div class="transport">
+            <button class="pbtn" id="btn-play" title="Tocar / pausar (espaço)" aria-label="Tocar ou pausar">
+              <svg id="ico-play" viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z"/></svg>
+              <svg id="ico-pause" class="hidden" viewBox="0 0 16 16"><path d="M3.5 2h3.2v12H3.5zM9.3 2h3.2v12H9.3z"/></svg>
+            </button>
+            <span class="clock"><b id="clock-now">00:00.0</b> / <span id="clock-total">00:00.0</span></span>
+            <span class="spacer"></span>
+            <button class="chip" id="btn-in" title="Marcar o início no ponto atual (tecla I)">Marcar início</button>
+            <button class="chip" id="btn-out" title="Marcar o fim no ponto atual (tecla O)">Marcar fim</button>
+            <button class="chip" id="btn-sel" title="Tocar só o trecho escolhido">Ver trecho</button>
+            <label class="chip toggle" title="Repetir o trecho"><input type="checkbox" id="loop">Repetir</label>
+          </div>
+          <div class="timeline" id="timeline">
+            <div class="strip" id="strip"></div>
+            <div class="dim dim-l" id="dim-l"></div>
+            <div class="dim dim-r" id="dim-r"></div>
+            <div class="sel" id="sel"></div>
+            <div class="handle" id="h-l" title="Início do trecho"></div>
+            <div class="handle" id="h-r" title="Fim do trecho"></div>
+            <div class="playhead" id="playhead"></div>
+          </div>
+        </div>
+        <div class="times">
+          <div><label class="lbl" for="start">Início</label><input type="text" id="start" placeholder="00:00:00.0"></div>
+          <div><label class="lbl" for="end">Fim</label><input type="text" id="end" placeholder="00:00:00.0"></div>
+          <div><label class="lbl">Duração</label><div class="dur" id="dur">—</div></div>
+        </div>
+        <div class="hint">Arraste as alças douradas para escolher o trecho. Setas andam quadro a quadro (Shift = 1 segundo), I e O marcam início e fim no ponto atual, espaço toca. O corte final é exato no frame e sai na qualidade original; a prévia é só uma versão leve para você escolher.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <label class="check"><input type="checkbox" id="transcribe"> Transcrever o áudio</label>
+      <div class="sub" id="tr-sub">
+        <div class="grid">
+          <div>
+            <label class="lbl" for="language">Idioma</label>
+            <select id="language">
+              <option value="">Detectar automaticamente</option>
+              <option value="pt">Português</option>
+              <option value="en">Inglês</option>
+              <option value="es">Espanhol</option>
+              <option value="fr">Francês</option>
+              <option value="it">Italiano</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl" for="model">Precisão</label>
+            <select id="model">
+              <option value="base">Rápida (base)</option>
+              <option value="small" selected>Equilibrada (small)</option>
+              <option value="medium">Alta (medium)</option>
+              <option value="large-v3">Máxima (large-v3, lento)</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint">Gera .txt com minutagem, .txt só texto, .srt (legenda) e .json. Na primeira vez o modelo é baixado.</div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <details>
+        <summary>Avançado · cookies do navegador (Instagram e conteúdo com login)</summary>
+        <div style="margin-top: 12px">
+          <select id="cookies">
+            <option value="">Não usar cookies</option>
+            <option value="chrome">Chrome</option>
+            <option value="firefox">Firefox</option>
+            <option value="safari">Safari</option>
+            <option value="edge">Edge</option>
+            <option value="brave">Brave</option>
+          </select>
+          <div class="hint">Use quando a plataforma pedir login. Feche o navegador escolhido antes, senão ele pode travar o acesso aos cookies.</div>
+        </div>
+      </details>
+    </div>
+
+    <div class="opt">
+      <button class="btn-gold" id="go">Baixar</button>
+    </div>
+  </section>
+
+  <!-- 3. Progresso -->
+  <section class="card hidden" id="progress-card">
+    <label class="lbl">Andamento</label>
+    <div class="progress" id="progress"><i id="bar"></i></div>
+    <div class="status" id="status">…</div>
+    <div class="error hidden" id="job-error"></div>
+  </section>
+
+  <!-- 4. Resultado -->
+  <section class="card result hidden" id="result">
+    <label class="lbl">Pronto</label>
+    <div id="files"></div>
+    <div class="path" id="out-path"></div>
+    <div id="tr-block" class="hidden">
+      <div class="row" style="margin-top: 22px; align-items: center">
+        <label class="lbl" style="margin: 0">Transcrição <span id="tr-lang" style="color: var(--muted)"></span></label>
+        <div class="seg" id="tr-view" style="flex: none">
+          <button data-v="timed" class="on" style="padding: 7px 12px; font-size: 13px">Com minutagem</button>
+          <button data-v="plain" style="padding: 7px 12px; font-size: 13px">Só o texto</button>
+        </div>
+        <button class="btn-ghost" id="copy" style="flex: none; padding: 8px 14px; font-size: 13px">Copiar</button>
+      </div>
+      <pre class="transcript" id="transcript"></pre>
+    </div>
+  </section>
+
+  <!-- 5. Usar no celular -->
+  <section class="card hidden" id="phone-card">
+    <label class="lbl">Usar no celular</label>
+    <div id="phone-body"></div>
+  </section>
+
+  <footer>Os arquivos ficam na pasta <span id="cfg-out">…</span>. Respeite os direitos de quem publicou o conteúdo. · <a href="#" id="open-phone">Usar no celular</a></footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+// aceita o link puro ou um texto com o link no meio ("Veja esse reel https://...")
+const getUrl = () => { const v = $('url').value.trim(); const m = v.match(/https?:\/\/[^\s]+/); return m ? m[0] : v; };
+let info = null;
+
+const fmt = (s) => { s = Math.max(0, s || 0); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = Math.floor(s%60);
+  return [h, m, sec].map(v => String(v).padStart(2, '0')).join(':'); };
+const parse = (t) => { t = (t||'').trim(); if (!t) return null; if (/^\d+(\.\d+)?$/.test(t)) return +t;
+  const p = t.split(':').map(Number); if (p.some(isNaN)) return null; while (p.length < 3) p.unshift(0); return p[0]*3600 + p[1]*60 + p[2]; };
+
+fetch('/api/config').then(r => r.json()).then(c => $('cfg-out').textContent = c.output_dir).catch(() => {});
+
+async function post(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.detail || `Erro ${r.status}`);
+  return data;
+}
+
+// ---- Analisar
+$('analyze').onclick = analyze;
+$('url').addEventListener('keydown', e => { if (e.key === 'Enter') analyze(); });
+async function analyze() {
+  const url = getUrl();
+  if (!url) return;
+  $('info-error').classList.add('hidden'); $('options').classList.add('hidden');
+  $('result').classList.add('hidden'); $('progress-card').classList.add('hidden');
+  $('analyze').disabled = true; $('analyze').textContent = 'Analisando…';
+  try {
+    info = await post('/api/info', { url, cookies_browser: $('cookies').value || null });
+    $('thumb').src = info.thumbnail || ''; $('thumb').classList.toggle('hidden', !info.thumbnail);
+    $('title').textContent = info.title;
+    $('meta').textContent = [info.platform, info.uploader, info.duration_label].filter(Boolean).join(' · ');
+    const q = $('quality'); q.innerHTML = '<option value="best">Melhor disponível' + (info.heights[0] ? ` (${info.heights[0]}p)` : '') + '</option>';
+    [2160, 1440, 1080, 720, 480].filter(h => !info.heights.length || info.heights.some(x => x >= h) || h <= 1080)
+      .forEach(h => q.insertAdjacentHTML('beforeend', `<option value="${h}">até ${h}p</option>`));
+    resetEditor();
+    $('options').classList.remove('hidden');
+  } catch (e) {
+    $('info-error').textContent = e.message; $('info-error').classList.remove('hidden');
+  } finally { $('analyze').disabled = false; $('analyze').textContent = 'Analisar'; }
+}
+
+// ---- Vídeo / áudio
+$('mode').querySelectorAll('button').forEach(b => b.onclick = () => {
+  $('mode').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on');
+  const audio = b.dataset.v === 'audio';
+  $('quality-wrap').classList.toggle('hidden', audio); $('audio-wrap').classList.toggle('hidden', !audio);
+});
+const mode = () => $('mode').querySelector('.on').dataset.v;
+
+// ---- Editor de trecho (mini player)
+const MIN_LEN = 0.2;
+const ed = { ready: false, loading: false, key: null, duration: 0, fps: 30, start: 0, end: 0, playSel: false };
+const video = $('video');
+const tl = $('timeline');
+let raf = 0, previewToken = 0, drag = null;
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const fmtMs = (s) => {
+  s = Math.max(0, s || 0);
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = Math.floor((s % 60) * 10) / 10;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${sec.toFixed(1).padStart(4, '0')}`;
+};
+const fmtClock = (s) => { const f = fmtMs(s); return s >= 3600 ? f : f.slice(3); };
+
+$('cut').onchange = () => {
+  $('cut-sub').classList.toggle('open', $('cut').checked);
+  if ($('cut').checked) { if (!ed.ready && !ed.loading) startPreview(); } else video.pause();
+  $('cut').blur();
+};
+$('transcribe').onchange = () => $('tr-sub').classList.toggle('open', $('transcribe').checked);
+
+function setPrep(frac, msg) {
+  $('prep-progress').classList.toggle('indet', frac < 0);
+  $('prep-bar').style.width = frac >= 0 ? (frac * 100) + '%' : '';
+  $('prep-status').textContent = msg;
+}
+function prepFail(msg) {
+  ed.loading = false;
+  $('prep-progress').classList.add('hidden'); $('prep-status').textContent = '';
+  $('prep-error').textContent = msg + '\nVocê ainda pode digitar o início e o fim nos campos abaixo.';
+  $('prep-error').classList.remove('hidden');
+}
+
+async function startPreview() {
+  if (!info) return;
+  ed.loading = true;
+  const token = ++previewToken;
+  $('prep').classList.remove('hidden'); $('prep-progress').classList.remove('hidden'); $('prep-error').classList.add('hidden');
+  setPrep(-1, 'Preparando a prévia. Ela é leve e só serve para você escolher o trecho.');
+  try {
+    const { id } = await post('/api/preview', { url: getUrl(), cookies_browser: $('cookies').value || null });
+    pollJob(id,
+      (j) => { if (token === previewToken) setPrep(j.progress, j.message); },
+      (r) => { if (token === previewToken) prepReady(r); },
+      (e) => { if (token === previewToken) prepFail(e); });
+  } catch (e) { if (token === previewToken) prepFail(e.message); }
+}
+
+function prepReady(r) {
+  ed.key = r.key; ed.duration = r.duration; ed.fps = r.fps || 30; ed.start = 0; ed.end = r.duration; ed.playSel = false;
+  $('strip').style.backgroundImage = r.filmstrip_url ? `url(${r.filmstrip_url})` : '';
+  $('clock-total').textContent = fmtClock(r.duration);
+  video.onloadedmetadata = () => {
+    ed.ready = true; ed.loading = false;
+    $('prep').classList.add('hidden'); $('stage').classList.remove('hidden');
+    renderSel(); renderHead(); syncPlayBtn();
+  };
+  video.onerror = () => prepFail('O navegador não conseguiu abrir a prévia.');
+  video.src = r.video_url;
+}
+
+function resetEditor() {
+  previewToken++; ed.ready = false; ed.loading = false; ed.key = null; ed.playSel = false;
+  video.onloadedmetadata = null; video.onerror = null;
+  video.pause(); video.removeAttribute('src'); video.load();
+  $('stage').classList.add('hidden'); $('prep').classList.remove('hidden');
+  $('prep-error').classList.add('hidden'); $('prep-progress').classList.remove('hidden');
+  $('start').value = ''; $('end').value = ''; $('dur').textContent = '—';
+  if ($('cut').checked) startPreview();
+}
+
+// seleção e playhead
+function renderSel() {
+  if (!ed.ready) return;
+  const d = ed.duration, pct = (v) => (v / d * 100) + '%';
+  $('h-l').style.left = pct(ed.start); $('h-r').style.left = pct(ed.end);
+  $('sel').style.left = pct(ed.start); $('sel').style.width = ((ed.end - ed.start) / d * 100) + '%';
+  $('dim-l').style.width = pct(ed.start); $('dim-r').style.left = pct(ed.end);
+  $('start').value = fmtMs(ed.start); $('end').value = fmtMs(ed.end); $('dur').textContent = fmtMs(ed.end - ed.start);
+}
+function renderHead() {
+  if (!ed.ready) return;
+  const t = video.currentTime || 0;
+  $('playhead').style.left = (t / ed.duration * 100) + '%';
+  $('clock-now').textContent = fmtClock(t);
+}
+const setStart = (v) => { ed.start = clamp(v, 0, ed.end - MIN_LEN); renderSel(); };
+const setEnd = (v) => { ed.end = clamp(v, ed.start + MIN_LEN, ed.duration); renderSel(); };
+const seek = (v) => { video.currentTime = clamp(v, 0, ed.duration); renderHead(); };
+
+// arrastar alças e a linha do tempo
+const timeAt = (e) => { const r = tl.getBoundingClientRect(); return clamp((e.clientX - r.left) / r.width, 0, 1) * ed.duration; };
+function bindDrag(el, kind, onMove) {
+  el.addEventListener('pointerdown', (e) => {
+    if (!ed.ready) return;
+    e.preventDefault(); e.stopPropagation();
+    video.pause(); ed.playSel = false; drag = kind; el.setPointerCapture(e.pointerId); onMove(timeAt(e));
+  });
+  el.addEventListener('pointermove', (e) => { if (drag === kind) onMove(timeAt(e)); });
+  const stop = () => { if (drag === kind) drag = null; };
+  el.addEventListener('pointerup', stop); el.addEventListener('pointercancel', stop);
+}
+bindDrag($('h-l'), 'l', (t) => { setStart(t); seek(ed.start); });
+bindDrag($('h-r'), 'r', (t) => { setEnd(t); seek(ed.end); });
+bindDrag(tl, 'head', (t) => seek(t));
+
+// reprodução
+function syncPlayBtn() { $('ico-play').classList.toggle('hidden', !video.paused); $('ico-pause').classList.toggle('hidden', video.paused); }
+function playFrom(t, constrained) { ed.playSel = constrained; seek(t); video.play().catch(() => {}); }
+function togglePlay() {
+  if (!ed.ready) return;
+  if (!video.paused) { video.pause(); return; }
+  const t = video.currentTime;
+  if (t < ed.start - 0.05) playFrom(t, false);
+  else if (t >= ed.end - 0.05) playFrom(ed.start, true);
+  else playFrom(t, true);
+}
+function tick() {
+  renderHead();
+  if (ed.playSel && video.currentTime >= ed.end) {
+    if ($('loop').checked) video.currentTime = ed.start;
+    else { video.pause(); seek(ed.end); ed.playSel = false; }
+  }
+  if (!video.paused) raf = requestAnimationFrame(tick);
+}
+video.addEventListener('play', () => { syncPlayBtn(); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); });
+video.addEventListener('pause', () => { syncPlayBtn(); renderHead(); });
+video.addEventListener('seeked', renderHead);
+video.addEventListener('ended', () => {
+  if (ed.playSel && $('loop').checked) playFrom(ed.start, true);
+  else { ed.playSel = false; syncPlayBtn(); }
+});
+// depois de um clique de mouse nos controles, tira o foco deles para o espaço sempre tocar/pausar
+// (cliques por teclado têm detail 0 e mantêm o foco)
+$('stage').addEventListener('click', (e) => {
+  if (e.detail > 0 && e.target.closest('button, label')) setTimeout(() => document.activeElement?.blur?.(), 0);
+});
+$('btn-play').onclick = togglePlay;
+$('player').onclick = togglePlay;
+$('btn-sel').onclick = () => { if (ed.ready) playFrom(ed.start, true); };
+$('btn-in').onclick = () => { if (ed.ready) setStart(video.currentTime); };
+$('btn-out').onclick = () => { if (ed.ready) setEnd(video.currentTime); };
+
+function step(dir, big) {
+  video.pause(); ed.playSel = false;
+  if (big) return seek(video.currentTime + dir);
+  const frame = Math.floor(video.currentTime * ed.fps + 1e-6); // quadro atual
+  seek((frame + dir + 0.5) / ed.fps); // meio do quadro vizinho, evita cair na borda
+}
+document.addEventListener('keydown', (e) => {
+  if (!ed.ready || !$('cut').checked || e.metaKey || e.ctrlKey || e.altKey) return;
+  const el = e.target, tag = el.tagName;
+  if (tag === 'SELECT' || tag === 'TEXTAREA' || (tag === 'INPUT' && !['checkbox', 'radio'].includes(el.type))) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ' && tag !== 'INPUT' && tag !== 'BUTTON') { e.preventDefault(); togglePlay(); }
+  else if (k === 'i') setStart(video.currentTime);
+  else if (k === 'o') setEnd(video.currentTime);
+  else if (k === 'arrowleft') { e.preventDefault(); step(-1, e.shiftKey); }
+  else if (k === 'arrowright') { e.preventDefault(); step(1, e.shiftKey); }
+});
+
+// campos de texto
+$('start').onchange = () => { const v = parse($('start').value); if (!ed.ready) return; if (v === null) return renderSel(); setStart(v); seek(ed.start); };
+$('end').onchange = () => { const v = parse($('end').value); if (!ed.ready) return; if (v === null) return renderSel(); setEnd(v); seek(ed.end); };
+
+function cutForDownload() {
+  if (!$('cut').checked) return { start: null, end: null };
+  let s = ed.ready ? ed.start : parse($('start').value), e = ed.ready ? ed.end : parse($('end').value);
+  const dur = ed.ready ? ed.duration : info?.duration;
+  if (s !== null && s <= 0.05) s = null;
+  if (e !== null && dur && e >= dur - 0.05) e = null;
+  return { start: s === null ? null : s.toFixed(3), end: e === null ? null : e.toFixed(3) };
+}
+
+async function pollJob(id, onProgress, onDone, onError) {
+  try {
+    const j = await (await fetch(`/api/jobs/${id}`)).json();
+    if (j.status === 'error') return onError(j.error);
+    onProgress(j);
+    if (j.status === 'done') return onDone(j.result);
+    setTimeout(() => pollJob(id, onProgress, onDone, onError), 600);
+  } catch (e) { onError(e.message); }
+}
+
+// ---- Baixar
+$('go').onclick = async () => {
+  const body = {
+    url: getUrl(), mode: mode(), quality: $('quality').value, audio_format: $('audio_format').value,
+    start: cutForDownload().start, end: cutForDownload().end,
+    transcribe: $('transcribe').checked,
+    language: $('language').value || null, whisper_model: $('model').value, cookies_browser: $('cookies').value || null,
+  };
+  $('go').disabled = true; $('result').classList.add('hidden'); $('job-error').classList.add('hidden');
+  $('progress-card').classList.remove('hidden'); setProgress(-1, 'Enviando…');
+  try {
+    const { id } = await post('/api/jobs', body);
+    pollJob(id, (j) => setProgress(j.progress, j.message), (r) => show(id, r), fail);
+  } catch (e) { fail(e.message); }
+};
+
+function setProgress(frac, msg) {
+  $('progress').classList.toggle('indet', frac < 0);
+  $('bar').style.width = frac >= 0 ? (frac * 100) + '%' : '';
+  $('status').textContent = msg;
+}
+function fail(msg) { $('job-error').textContent = msg; $('job-error').classList.remove('hidden'); setProgress(0, 'Falhou.'); $('go').disabled = false; }
+
+function show(id, r) {
+  $('go').disabled = false;
+  const links = [`<a class="file" href="/api/jobs/${id}/file/media" download>⬇ ${r.media_name}</a>`,
+    `<a class="file" href="/api/jobs/${id}/file/media?inline=1" target="_blank" rel="noopener">▶ Abrir</a>`];
+  if (r.transcript_txt) links.push(`<a class="file" href="/api/jobs/${id}/file/timed" download>.txt com minutagem</a>`, `<a class="file" href="/api/jobs/${id}/file/txt" download>.txt só texto</a>`, `<a class="file" href="/api/jobs/${id}/file/srt" download>.srt</a>`, `<a class="file" href="/api/jobs/${id}/file/json" download>.json</a>`);
+  $('files').innerHTML = links.join('');
+  $('out-path').textContent = 'Salvo em: ' + r.media_path;
+  $('tr-block').classList.toggle('hidden', !r.transcript_text);
+  if (r.transcript_text) { transcripts = { timed: r.transcript_timed_text, plain: r.transcript_text }; renderTranscript(); $('tr-lang').textContent = r.transcript_language ? `· ${r.transcript_language}` : ''; }
+  $('result').classList.remove('hidden'); $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+let transcripts = { timed: '', plain: '' };
+const trView = () => $('tr-view').querySelector('.on').dataset.v;
+const renderTranscript = () => { $('transcript').textContent = transcripts[trView()] || ''; };
+$('tr-view').querySelectorAll('button').forEach(b => b.onclick = () => {
+  $('tr-view').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); renderTranscript();
+});
+// ---- Usar no celular
+const copyText = async (text, btn) => {
+  try { await navigator.clipboard.writeText(text); } catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  const old = btn.textContent; btn.textContent = 'Copiado ✓'; setTimeout(() => btn.textContent = old, 1500);
+};
+$('open-phone').onclick = async (e) => {
+  e.preventDefault();
+  const card = $('phone-card');
+  if (!card.classList.contains('hidden')) return card.classList.add('hidden');
+  const body = $('phone-body');
+  try {
+    const r = await (await fetch('/api/phone')).json();
+    if (!r.lan) {
+      body.innerHTML = '<div class="txt">Para usar no celular, abra a ferramenta no <b>modo celular</b>: no Mac, dois cliques em <b>start-celular.command</b>; no Windows, dois cliques em <b>start-celular.bat</b>. O computador e o celular precisam estar na mesma rede Wi-Fi.</div>';
+    } else {
+      const base = (r.local_url || r.ip_url) + '&url=';
+      body.innerHTML = `
+        <div class="phone">
+          <div class="qr" id="ph-qr"></div>
+          <div class="txt">
+            <div><b>1. Abrir no celular.</b> Escaneie o QR code com a câmera (mesmo Wi-Fi do computador). Depois, no Safari, use Compartilhar → <b>Adicionar à Tela de Início</b> para ter o ícone.</div>
+            <div class="small" style="margin-top: 6px">Se o QR code não abrir, digite o endereço:</div>
+            <code class="addr" id="ph-ip"></code>
+          </div>
+        </div>
+        <div class="txt" style="margin-top: 20px">
+          <div><b>2. Atalho de compartilhar (iPhone).</b> Assim você manda um Reel direto do Instagram para a ferramenta, sem copiar o link:</div>
+          <ol>
+            <li>No app <b>Atalhos</b>, crie um atalho novo chamado "Baixar no Lummie".</li>
+            <li>Em Detalhes, ative <b>Mostrar na Folha de Compartilhamento</b> e deixe só <b>URLs</b> e <b>Texto</b> marcados.</li>
+            <li>Adicione a ação <b>Codificar URL</b> e, no campo, escolha <b>Entrada de Atalho</b>.</li>
+            <li>Adicione a ação <b>Texto</b>, cole o endereço abaixo e, no final dele, toque na variável <b>Texto Codificado em URL</b>.</li>
+            <li>Adicione a ação <b>Abrir URLs</b> e escolha o <b>Texto</b>.</li>
+          </ol>
+          <code class="addr" id="ph-short"></code>
+          <button class="btn-ghost" id="ph-copy" style="padding: 8px 14px; font-size: 13px">Copiar endereço do atalho</button>
+          <div class="small" style="margin-top: 10px">Pronto: no Instagram, TikTok ou YouTube, toque em Compartilhar → Mais → "Baixar no Lummie". O link abre aqui já analisado.${r.local_url ? ' O endereço com .local continua valendo se o IP do computador mudar.' : ''}</div>
+        </div>`;
+      $('ph-qr').innerHTML = r.qr_svg || '';
+      $('ph-ip').textContent = r.ip_url || r.local_url;
+      $('ph-short').textContent = base;
+      $('ph-copy').onclick = (ev) => copyText(base, ev.currentTarget);
+    }
+  } catch (err) { body.textContent = 'Não consegui carregar: ' + err.message; }
+  card.classList.remove('hidden'); card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+$('copy').onclick = async () => { try { await navigator.clipboard.writeText($('transcript').textContent); $('copy').textContent = 'Copiado ✓'; setTimeout(() => $('copy').textContent = 'Copiar', 1500); } catch {} };
+// ---- Link compartilhado (?url=...): abre já analisado
+(() => {
+  const params = new URLSearchParams(location.search), shared = params.get('url');
+  if (!shared) return;
+  $('url').value = shared;
+  params.delete('url');
+  const rest = params.toString();
+  history.replaceState(null, '', location.pathname + (rest ? '?' + rest : ''));
+  analyze();
+})();
+
+</script>
+</body>
+</html>
